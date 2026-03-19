@@ -13,6 +13,7 @@ data class ListEvent(
     var isRepeatable: Boolean,
     var isTask: Boolean,
     var isTaskCompleted: Boolean,
+    var isImportant: Boolean,
     var isAttendeeInviteDeclined: Boolean,
     var isEventCanceled: Boolean
 ) : ListItem() {
@@ -31,6 +32,7 @@ data class ListEvent(
             isRepeatable = false,
             isTask = false,
             isTaskCompleted = false,
+            isImportant = false,
             isAttendeeInviteDeclined = false,
             isEventCanceled = false
         )

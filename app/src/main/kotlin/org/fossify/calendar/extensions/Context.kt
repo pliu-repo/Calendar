@@ -878,20 +878,22 @@ fun Context.getEventListItems(
             prevCode = code
         }
 
+        val meta = it.taskMeta
         val listEvent =
             ListEvent(
                 it.id!!,
                 it.startTS,
                 it.endTS,
-                it.title,
+                meta.cleanTitle,
                 it.description,
                 it.getIsAllDay(),
                 it.color,
                 it.location,
                 it.isPastEvent,
                 it.repeatInterval > 0,
-                it.isTask(),
-                it.isTaskCompleted(),
+                it.isTask() || meta.isTask,
+                if (it.isTask()) it.isTaskCompleted() else meta.isCompleted,
+                meta.isImportant,
                 it.isAttendeeInviteDeclined(),
                 it.isEventCanceled()
             )

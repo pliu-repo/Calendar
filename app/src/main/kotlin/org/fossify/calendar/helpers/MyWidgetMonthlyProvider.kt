@@ -137,19 +137,20 @@ class MyWidgetMonthlyProvider : AppWidgetProvider() {
                 .toMutableList() as ArrayList<Event>
 
             day.dayEvents.forEach {
+                val meta = it.taskMeta
                 val backgroundColor = it.color
                 var eventTextColor = backgroundColor.getContrastColor()
-                val shouldDim = (it.isTask() && it.isTaskCompleted() && dimCompletedTasks)
-                    || (dimPastEvents && it.isPastEvent && !it.isTask())
+                val shouldDim = (meta.isTask && meta.isCompleted && dimCompletedTasks)
+                    || (dimPastEvents && it.isPastEvent && !meta.isTask)
                 if (shouldDim) {
                     eventTextColor = eventTextColor.adjustAlpha(MEDIUM_ALPHA)
                 }
 
                 val newRemoteView = RemoteViews(packageName, R.layout.day_monthly_event_view_widget).apply {
-                    setText(R.id.day_monthly_event_id, it.title.replace(" ", "\u00A0"))
+                    setText(R.id.day_monthly_event_id, meta.cleanTitle.replace(" ", "\u00A0"))
                     setTextColor(R.id.day_monthly_event_id, eventTextColor)
                     setTextSize(R.id.day_monthly_event_id, smallerFontSize - 3f)
-                    setVisibleIf(R.id.day_monthly_task_image, it.isTask())
+                    setVisibleIf(R.id.day_monthly_task_image, meta.isTask)
                     applyColorFilter(R.id.day_monthly_task_image, eventTextColor)
                     setInt(R.id.day_monthly_event_background, "setColorFilter", it.color)
 

@@ -1,5 +1,6 @@
 package org.fossify.calendar.adapters
 
+import android.graphics.Typeface
 import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
@@ -137,6 +138,7 @@ class EventListAdapter(
             eventItemHolder.background.applyColorFilter(textColor)
             eventItemTitle.text = listEvent.title
             eventItemTitle.checkViewStrikeThrough(listEvent.shouldStrikeThrough())
+            eventItemTitle.setTypeface(eventItemTitle.typeface, if (listEvent.isImportant) Typeface.BOLD else Typeface.NORMAL)
             eventItemTime.text = if (listEvent.isAllDay) allDayString else Formatter.getTimeFromTS(activity, listEvent.startTS)
             if (listEvent.startTS != listEvent.endTS) {
                 if (!listEvent.isAllDay) {
@@ -177,6 +179,29 @@ class EventListAdapter(
             eventItemDescription.setTextColor(newTextColor)
             eventItemTaskImage.applyColorFilter(newTextColor)
             eventItemTaskImage.beVisibleIf(listEvent.isTask)
+
+            if (listEvent.isTask) {
+                eventItemTaskImage.setOnClickListener {
+                    val newCompleted = !listEvent.isTaskCompleted
+                    listEvent.isTaskCompleted = newCompleted
+                    val idx = listItems.indexOf(listEvent)
+                    if (idx != -1) notifyItemChanged(idx)
+                    ensureBackgroundThread {
+                        val event = activity.eventsDB.getEventWithId(listEvent.id) ?: return@ensureBackgroundThread
+                        if (event.isTask()) {
+                            activity.updateTaskCompletion(event, newCompleted)
+                        } else {
+                            // Title-prefix task: rewrite the title prefix to reflect new state
+                            val cleanTitle = event.taskMeta.cleanTitle
+                            val prefix = "${if (listEvent.isImportant) "! " else ""}${if (newCompleted) "[c]" else "[]"} "
+                            event.title = "$prefix$cleanTitle"
+                            activity.eventsDB.insertOrUpdate(event)
+                        }
+                    }
+                }
+            } else {
+                eventItemTaskImage.setOnClickListener(null)
+            }
 
             val startMargin = if (listEvent.isTask) {
                 0

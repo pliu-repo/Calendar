@@ -224,19 +224,21 @@ class EventListWidgetAdapter(val context: Context, val intent: Intent) : RemoteV
                     prevCode = code
                 }
 
+                val meta = event.taskMeta
                 val listEvent = ListEvent(
                     id = event.id!!,
                     startTS = event.startTS,
                     endTS = event.endTS,
-                    title = event.title,
+                    title = meta.cleanTitle,
                     description = event.description,
                     isAllDay = event.getIsAllDay(),
                     color = event.color,
                     location = event.location,
                     isPastEvent = event.isPastEvent,
                     isRepeatable = event.repeatInterval > 0,
-                    isTask = event.isTask(),
-                    isTaskCompleted = event.isTaskCompleted(),
+                    isTask = event.isTask() || meta.isTask,
+                    isTaskCompleted = if (event.isTask()) event.isTaskCompleted() else meta.isCompleted,
+                    isImportant = meta.isImportant,
                     isAttendeeInviteDeclined = event.isAttendeeInviteDeclined(),
                     isEventCanceled = event.isEventCanceled()
                 )
