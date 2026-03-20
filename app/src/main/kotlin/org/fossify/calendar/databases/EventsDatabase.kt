@@ -24,7 +24,7 @@ import java.util.concurrent.Executors
 
 @Database(
     entities = [Event::class, CalendarEntity::class, Widget::class, Task::class],
-    version = 11
+    version = 12
 )
 @TypeConverters(Converters::class)
 abstract class EventsDatabase : RoomDatabase() {
@@ -65,6 +65,7 @@ abstract class EventsDatabase : RoomDatabase() {
                             .addMigrations(MIGRATION_8_9)
                             .addMigrations(MIGRATION_9_10)
                             .addMigrations(MIGRATION_10_11)
+                            .addMigrations(MIGRATION_11_12)
                             .build()
                         db!!.openHelper.setWriteAheadLoggingEnabled(true)
                     }
@@ -90,8 +91,8 @@ abstract class EventsDatabase : RoomDatabase() {
         }
 
         private val MIGRATION_1_2 = object : Migration(1, 2) {
-            override fun migrate(database: SupportSQLiteDatabase) {
-                database.apply {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.apply {
                     execSQL("ALTER TABLE events ADD COLUMN reminder_1_type INTEGER NOT NULL DEFAULT 0")
                     execSQL("ALTER TABLE events ADD COLUMN reminder_2_type INTEGER NOT NULL DEFAULT 0")
                     execSQL("ALTER TABLE events ADD COLUMN reminder_3_type INTEGER NOT NULL DEFAULT 0")
@@ -101,24 +102,24 @@ abstract class EventsDatabase : RoomDatabase() {
         }
 
         private val MIGRATION_2_3 = object : Migration(2, 3) {
-            override fun migrate(database: SupportSQLiteDatabase) {
-                database.apply {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.apply {
                     execSQL("ALTER TABLE events ADD COLUMN time_zone TEXT NOT NULL DEFAULT ''")
                 }
             }
         }
 
         private val MIGRATION_3_4 = object : Migration(3, 4) {
-            override fun migrate(database: SupportSQLiteDatabase) {
-                database.apply {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.apply {
                     execSQL("ALTER TABLE events ADD COLUMN availability INTEGER NOT NULL DEFAULT 0")
                 }
             }
         }
 
         private val MIGRATION_4_5 = object : Migration(4, 5) {
-            override fun migrate(database: SupportSQLiteDatabase) {
-                database.apply {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.apply {
                     execSQL("CREATE TABLE IF NOT EXISTS `widgets` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `widget_id` INTEGER NOT NULL, `period` INTEGER NOT NULL)")
                     execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_widgets_widget_id` ON `widgets` (`widget_id`)")
                 }
@@ -126,16 +127,16 @@ abstract class EventsDatabase : RoomDatabase() {
         }
 
         private val MIGRATION_5_6 = object : Migration(5, 6) {
-            override fun migrate(database: SupportSQLiteDatabase) {
-                database.apply {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.apply {
                     execSQL("ALTER TABLE events ADD COLUMN type INTEGER NOT NULL DEFAULT 0")
                 }
             }
         }
 
         private val MIGRATION_6_7 = object : Migration(6, 7) {
-            override fun migrate(database: SupportSQLiteDatabase) {
-                database.apply {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.apply {
                     execSQL("CREATE TABLE IF NOT EXISTS `tasks` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `task_id` INTEGER NOT NULL, `start_ts` INTEGER NOT NULL, `flags` INTEGER NOT NULL)")
                     execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_tasks_id_task_id` ON `tasks` (`id`, `task_id`)")
                 }
@@ -143,24 +144,24 @@ abstract class EventsDatabase : RoomDatabase() {
         }
 
         private val MIGRATION_7_8 = object : Migration(7, 8) {
-            override fun migrate(database: SupportSQLiteDatabase) {
-                database.apply {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.apply {
                     execSQL("ALTER TABLE event_types ADD COLUMN type INTEGER NOT NULL DEFAULT 0")
                 }
             }
         }
 
         private val MIGRATION_8_9 = object : Migration(8, 9) {
-            override fun migrate(database: SupportSQLiteDatabase) {
-                database.apply {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.apply {
                     execSQL("ALTER TABLE events ADD COLUMN status INTEGER NOT NULL DEFAULT 1")
                 }
             }
         }
 
         private val MIGRATION_9_10 = object : Migration(9, 10) {
-            override fun migrate(database: SupportSQLiteDatabase) {
-                database.apply {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.apply {
                     // remove old, invalid entries
                     execSQL("DELETE FROM `tasks` WHERE `task_id` NOT IN (SELECT e.id FROM events AS e)")
                     // SQLite doesn't support ALTER TABLE ADD CONSTRAINT, so we need to recreate the table
@@ -175,10 +176,18 @@ abstract class EventsDatabase : RoomDatabase() {
         }
 
         private val MIGRATION_10_11 = object : Migration(10, 11) {
-            override fun migrate(database: SupportSQLiteDatabase) {
-                database.apply {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.apply {
                     execSQL("ALTER TABLE widgets ADD COLUMN header INTEGER NOT NULL DEFAULT 1")
                     execSQL("ALTER TABLE events ADD COLUMN access_level INTEGER NOT NULL DEFAULT 0")
+                }
+            }
+        }
+
+        private val MIGRATION_11_12 = object : Migration(11, 12) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.apply {
+                    execSQL("CREATE INDEX IF NOT EXISTS `index_tasks_task_id` ON `tasks` (`task_id`)")
                 }
             }
         }
