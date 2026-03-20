@@ -1,5 +1,6 @@
 package org.pblmotion.calendar.views
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.util.AttributeSet
 import android.view.LayoutInflater
@@ -149,6 +150,7 @@ class MonthViewWrapper(
 
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     private fun addViewBackground(viewX: Int, viewY: Int, day: DayMonthly) {
 
         MonthViewBackgroundBinding.inflate(inflater, this, false).root.apply {

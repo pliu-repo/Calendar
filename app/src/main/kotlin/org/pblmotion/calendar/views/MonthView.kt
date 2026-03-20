@@ -64,6 +64,7 @@ class MonthView(context: Context, attrs: AttributeSet, defStyle: Int) : View(con
     private var days = ArrayList<DayMonthly>()
     private var dayVerticalOffsets = SparseIntArray()
     private var selectedDayCoords = Point(-1, -1)
+    private val taskCheckboxHitAreas = ArrayList<Pair<Long, RectF>>()
 
     constructor(context: Context, attrs: AttributeSet) : this(context, attrs, 0)
 
@@ -160,6 +161,7 @@ class MonthView(context: Context, attrs: AttributeSet, defStyle: Int) : View(con
                         isPastEvent = event.isPastEvent,
                         isTask = event.isTask(),
                         isTaskCompleted = event.isTaskCompleted(),
+                        isImportant = event.taskMeta.isImportant,
                         isAttendeeInviteDeclined = event.isAttendeeInviteDeclined(),
                         isEventCanceled = event.isEventCanceled()
                     )
@@ -176,6 +178,7 @@ class MonthView(context: Context, attrs: AttributeSet, defStyle: Int) : View(con
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         dayVerticalOffsets.clear()
+        taskCheckboxHitAreas.clear()
         measureDaySize(canvas)
 
         if (config.showGrid && !isMonthDayView) {
@@ -373,8 +376,13 @@ class MonthView(context: Context, attrs: AttributeSet, defStyle: Int) : View(con
         if (event.isTask) {
             val taskIcon = resources.getColoredDrawableWithColor(R.drawable.ic_task_vector, specificEventTitlePaint.color).mutate()
             val taskIconY = yPos.toInt() + verticalOffset - eventTitleHeight + smallPadding * 2
-            taskIcon.setBounds(xPos.toInt() + smallPadding * 2, taskIconY, xPos.toInt() + eventTitleHeight + smallPadding * 2, taskIconY + eventTitleHeight)
+            val taskIconLeft = xPos + smallPadding * 2
+            val taskIconTop = taskIconY.toFloat()
+            val taskIconRight = xPos + eventTitleHeight + smallPadding * 2
+            val taskIconBottom = (taskIconY + eventTitleHeight).toFloat()
+            taskIcon.setBounds(taskIconLeft.toInt(), taskIconTop.toInt(), taskIconRight.toInt(), taskIconBottom.toInt())
             taskIcon.draw(canvas)
+            taskCheckboxHitAreas.add(event.id to RectF(taskIconLeft, taskIconTop, taskIconRight, taskIconBottom))
             taskIconWidth += eventTitleHeight + smallPadding
         }
 
@@ -507,6 +515,36 @@ class MonthView(context: Context, attrs: AttributeSet, defStyle: Int) : View(con
 
     fun updateCurrentlySelectedDay(x: Int, y: Int) {
         selectedDayCoords = Point(x, y)
+        invalidate()
+    }
+
+    fun findCheckboxEventIdAt(x: Float, y: Float): Long? {
+        for ((eventId, rect) in taskCheckboxHitAreas.asReversed()) {
+            if (rect.contains(x, y)) {
+                return eventId
+            }
+        }
+        return null
+    }
+
+    fun updateEventTitle(eventId: Long, newTitle: String) {
+        days.forEach { day ->
+            day.dayEvents.forEach { event ->
+                if (event.id == eventId) {
+                    event.title = newTitle
+                }
+            }
+        }
+
+        allEvents = ArrayList(
+            allEvents.map { event ->
+                if (event.id == eventId) {
+                    event.copy(title = newTitle)
+                } else {
+                    event
+                }
+            }
+        )
         invalidate()
     }
 }
