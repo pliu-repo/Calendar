@@ -41,7 +41,7 @@
         android:textSize="@dimen/smaller_text_size"
         tools:text="Wk. 2" />
 
-    <org.fossify.calendar.views.MyScrollView
+    <org.pblmotion.calendar.views.MyScrollView
         android:id="@+id/week_view_hours_scrollview"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -58,7 +58,7 @@
             android:layout_height="wrap_content"
             android:orientation="vertical" />
 
-    </org.fossify.calendar.views.MyScrollView>
+    </org.pblmotion.calendar.views.MyScrollView>
 
     <org.fossify.commons.views.MyViewPager
         android:id="@+id/week_view_view_pager"
