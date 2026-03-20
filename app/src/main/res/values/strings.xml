@@ -230,6 +230,10 @@
     <string name="allow_changing_time_zones">Allow changing event time zones</string>
     <string name="manage_quick_filter_event_types">Manage quick filter calendars</string>
     <string name="allow_creating_tasks">Allow creating tasks</string>
+    <string name="taskify_events_mode">Taskify Events Mode</string>
+    <string name="taskify_events_mode_description">Convert all events into actionable tasks with importance and completion controls.</string>
+    <string name="important">Important</string>
+    <string name="completed">Completed</string>
 
     <!-- CalDAV sync -->
     <string name="caldav">CalDAV</string>

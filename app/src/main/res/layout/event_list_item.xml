@@ -44,6 +44,20 @@
             app:layout_constraintStart_toEndOf="@+id/event_item_color_bar"
             app:layout_constraintTop_toTopOf="@+id/event_item_title" />
 
+        <ImageView
+            android:id="@+id/event_item_important_image"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:layout_marginStart="@dimen/tiny_margin"
+            android:contentDescription="@string/important"
+            android:paddingTop="@dimen/small_margin"
+            android:paddingBottom="@dimen/small_margin"
+            android:src="@drawable/ic_important_vector"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@+id/event_item_title"
+            app:layout_constraintStart_toEndOf="@+id/event_item_task_image"
+            app:layout_constraintTop_toTopOf="@+id/event_item_title" />
+
         <TextView
             android:id="@+id/event_item_title"
             android:layout_width="0dp"
@@ -56,7 +70,7 @@
             android:paddingBottom="@dimen/tiny_margin"
             android:textSize="@dimen/day_text_size"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/event_item_task_image"
+            app:layout_constraintStart_toEndOf="@+id/event_item_important_image"
             app:layout_constraintTop_toTopOf="parent"
             tools:text="Event title" />
 

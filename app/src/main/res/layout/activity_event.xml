@@ -105,11 +105,40 @@
                 android:background="@color/divider_grey"
                 android:importantForAccessibility="no" />
 
+            <LinearLayout
+                android:id="@+id/event_taskify_holder"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/event_description_divider"
+                android:layout_marginStart="@dimen/activity_margin"
+                android:layout_marginEnd="@dimen/activity_margin"
+                android:layout_marginBottom="@dimen/normal_margin"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <CheckBox
+                    android:id="@+id/event_important"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/important"
+                    android:textSize="@dimen/day_text_size" />
+
+                <CheckBox
+                    android:id="@+id/event_completed"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/completed"
+                    android:textSize="@dimen/day_text_size" />
+
+            </LinearLayout>
+
             <ImageView
                 android:id="@+id/event_time_image"
                 android:layout_width="@dimen/smaller_icon_size"
                 android:layout_height="@dimen/smaller_icon_size"
-                android:layout_below="@+id/event_description_divider"
+                android:layout_below="@+id/event_taskify_holder"
                 android:layout_alignTop="@+id/event_all_day_holder"
                 android:layout_alignBottom="@+id/event_all_day_holder"
                 android:layout_marginStart="@dimen/normal_margin"
@@ -120,7 +149,7 @@
                 android:id="@+id/event_all_day_holder"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_below="@+id/event_description_divider"
+                android:layout_below="@+id/event_taskify_holder"
                 android:layout_alignParentEnd="true"
                 android:layout_marginStart="@dimen/small_margin"
                 android:layout_toEndOf="@+id/event_time_image"

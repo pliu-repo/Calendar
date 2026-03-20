@@ -304,6 +304,11 @@ class Config(context: Context) : BaseConfig(context) {
         set(allowCreatingTasks) = prefs.edit().putBoolean(ALLOW_CREATING_TASKS, allowCreatingTasks)
             .apply()
 
+    var taskifyEventsMode: Boolean
+        get() = prefs.getBoolean(TASKIFY_EVENTS_MODE, false)
+        set(taskifyEventsMode) = prefs.edit().putBoolean(TASKIFY_EVENTS_MODE, taskifyEventsMode)
+            .apply()
+
     var wasFilteredOutWarningShown: Boolean
         get() = prefs.getBoolean(WAS_FILTERED_OUT_WARNING_SHOWN, false)
         set(wasFilteredOutWarningShown) = prefs.edit()

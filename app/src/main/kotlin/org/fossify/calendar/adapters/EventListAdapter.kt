@@ -1,5 +1,6 @@
 package org.fossify.calendar.adapters
 
+import android.graphics.Typeface
 import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
@@ -19,6 +20,7 @@ import org.fossify.calendar.models.ListSectionMonth
 import org.fossify.commons.adapters.MyRecyclerViewAdapter
 import org.fossify.commons.extensions.adjustAlpha
 import org.fossify.commons.extensions.applyColorFilter
+import org.fossify.commons.extensions.beGone
 import org.fossify.commons.extensions.beVisibleIf
 import org.fossify.commons.extensions.getProperTextColor
 import org.fossify.commons.helpers.MEDIUM_ALPHA
@@ -36,6 +38,7 @@ class EventListAdapter(
     private val replaceDescription = activity.config.replaceDescription
     private val dimPastEvents = activity.config.dimPastEvents
     private val dimCompletedTasks = activity.config.dimCompletedTasks
+    private val taskifyEventsMode = activity.config.taskifyEventsMode
     private val now = getNowSeconds()
     private var use24HourFormat = activity.config.use24HourFormat
     private var currentItemsHash = listItems.hashCode()
@@ -133,9 +136,17 @@ class EventListAdapter(
 
     private fun setupListEvent(view: View, listEvent: ListEvent) {
         EventListItemBinding.bind(view).apply {
+            val taskMeta = if (taskifyEventsMode && !listEvent.isTask) {
+                TaskifyHelper.parseTitle(listEvent.title, taskifyModeEnabled = true)
+            } else {
+                null
+            }
+
+            val displayTitle = taskMeta?.cleanTitle ?: listEvent.title
+
             eventItemHolder.isSelected = selectedKeys.contains(listEvent.hashCode())
             eventItemHolder.background.applyColorFilter(textColor)
-            eventItemTitle.text = listEvent.title
+            eventItemTitle.text = displayTitle
             eventItemTitle.checkViewStrikeThrough(listEvent.shouldStrikeThrough())
             eventItemTime.text = if (listEvent.isAllDay) allDayString else Formatter.getTimeFromTS(activity, listEvent.startTS)
             if (listEvent.startTS != listEvent.endTS) {
@@ -172,19 +183,38 @@ class EventListAdapter(
                 newTextColor = properPrimaryColor
             }
 
-            eventItemTime.setTextColor(newTextColor)
-            eventItemTitle.setTextColor(newTextColor)
-            eventItemDescription.setTextColor(newTextColor)
-            eventItemTaskImage.applyColorFilter(newTextColor)
-            eventItemTaskImage.beVisibleIf(listEvent.isTask)
+            if (taskMeta != null) {
+                // Taskify Events Mode: apply importance/completion styling
+                val isImportant = taskMeta.isImportant
+                val isCompleted = taskMeta.isCompleted
 
-            val startMargin = if (listEvent.isTask) {
-                0
+                eventItemTitle.typeface = if (isImportant) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
+                eventItemImportantImage.beVisibleIf(isImportant)
+                eventItemImportantImage.applyColorFilter(newTextColor)
+                eventItemTaskImage.beGone()
+
+                if (isCompleted) {
+                    eventItemTitle.applyTaskifyCompletedStyle(true)
+                } else {
+                    eventItemTitle.setTextColor(newTextColor)
+                }
+
+                eventItemTime.setTextColor(newTextColor)
+                eventItemDescription.setTextColor(newTextColor)
+                (eventItemTitle.layoutParams as ConstraintLayout.LayoutParams).marginStart = 0
             } else {
-                mediumMargin
-            }
+                // Normal event or task
+                eventItemTitle.typeface = Typeface.DEFAULT
+                eventItemImportantImage.beGone()
+                eventItemTitle.setTextColor(newTextColor)
+                eventItemTime.setTextColor(newTextColor)
+                eventItemDescription.setTextColor(newTextColor)
+                eventItemTaskImage.applyColorFilter(newTextColor)
+                eventItemTaskImage.beVisibleIf(listEvent.isTask)
 
-            (eventItemTitle.layoutParams as ConstraintLayout.LayoutParams).marginStart = startMargin
+                val startMargin = if (listEvent.isTask) 0 else mediumMargin
+                (eventItemTitle.layoutParams as ConstraintLayout.LayoutParams).marginStart = startMargin
+            }
         }
     }
 

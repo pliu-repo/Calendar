@@ -118,6 +118,7 @@ class WeekFragment : Fragment(), WeeklyCalendar {
     private var wasExtraHeightAdded = false
     private var dimPastEvents = true
     private var dimCompletedTasks = true
+    private var taskifyEventsMode = false
     private var highlightWeekends = false
     private var wasScaled = false
     private var isPrintVersion = false
@@ -148,6 +149,7 @@ class WeekFragment : Fragment(), WeeklyCalendar {
         weekDateTime = Formatter.getDateTimeFromTS(weekTimestamp)
         dimPastEvents = config.dimPastEvents
         dimCompletedTasks = config.dimCompletedTasks
+        taskifyEventsMode = config.taskifyEventsMode
         highlightWeekends = config.highlightWeekends
         primaryColor = requireContext().getProperPrimaryColor()
         allDayRows.add(HashSet())
@@ -758,6 +760,21 @@ class WeekFragment : Fragment(), WeeklyCalendar {
                             weekEventTaskImage.applyColorFilter(textColor)
                         }
 
+                        val taskifyMeta = if (taskifyEventsMode && !event.isTask()) {
+                            org.fossify.calendar.helpers.TaskifyHelper.parseTitle(event.title, taskifyModeEnabled = true)
+                        } else {
+                            null
+                        }
+
+                        if (taskifyMeta != null) {
+                            weekEventImportantImage.beVisibleIf(taskifyMeta.isImportant)
+                            if (taskifyMeta.isImportant) {
+                                weekEventImportantImage.applyColorFilter(textColor)
+                            }
+                        } else {
+                            weekEventImportantImage.beGone()
+                        }
+
                         weekEventLabel.apply {
                             setTextColor(textColor)
                             maxLines = if (event.isTask() || event.startTS == event.endTS) {
@@ -766,8 +783,14 @@ class WeekFragment : Fragment(), WeeklyCalendar {
                                 3
                             }
 
-                            text = event.title
-                            checkViewStrikeThrough(event.shouldStrikeThrough())
+                            val displayTitle = taskifyMeta?.cleanTitle ?: event.title
+                            text = displayTitle
+                            checkViewStrikeThrough(event.shouldStrikeThrough() || (taskifyMeta?.isCompleted == true))
+                            if (taskifyMeta?.isImportant == true) {
+                                typeface = android.graphics.Typeface.DEFAULT_BOLD
+                            } else {
+                                typeface = android.graphics.Typeface.DEFAULT
+                            }
                             contentDescription = text
 
                             minHeight = if (event.startTS == event.endTS) {
@@ -910,17 +933,38 @@ class WeekFragment : Fragment(), WeeklyCalendar {
 
             root.background = ColorDrawable(backgroundColor)
 
+            val allDayTaskifyMeta = if (taskifyEventsMode && !event.isTask()) {
+                org.fossify.calendar.helpers.TaskifyHelper.parseTitle(event.title, taskifyModeEnabled = true)
+            } else {
+                null
+            }
+
             weekEventLabel.apply {
                 setTextColor(textColor)
                 maxLines = if (event.isTask()) 1 else 2
-                text = event.title
-                checkViewStrikeThrough(event.shouldStrikeThrough())
+                val displayTitle = allDayTaskifyMeta?.cleanTitle ?: event.title
+                text = displayTitle
+                checkViewStrikeThrough(event.shouldStrikeThrough() || (allDayTaskifyMeta?.isCompleted == true))
+                if (allDayTaskifyMeta?.isImportant == true) {
+                    typeface = android.graphics.Typeface.DEFAULT_BOLD
+                } else {
+                    typeface = android.graphics.Typeface.DEFAULT
+                }
                 contentDescription = text
             }
 
             weekEventTaskImage.beVisibleIf(event.isTask())
             if (event.isTask()) {
                 weekEventTaskImage.applyColorFilter(textColor)
+            }
+
+            if (allDayTaskifyMeta != null) {
+                weekEventImportantImage.beVisibleIf(allDayTaskifyMeta.isImportant)
+                if (allDayTaskifyMeta.isImportant) {
+                    weekEventImportantImage.applyColorFilter(textColor)
+                }
+            } else {
+                weekEventImportantImage.beGone()
             }
 
             val startDateTime = Formatter.getDateTimeFromTS(event.startTS)

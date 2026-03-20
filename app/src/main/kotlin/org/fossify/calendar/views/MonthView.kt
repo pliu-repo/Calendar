@@ -369,25 +369,41 @@ class MonthView(context: Context, attrs: AttributeSet, defStyle: Int) : View(con
         canvas.drawRoundRect(bgRectF, BG_CORNER_RADIUS, BG_CORNER_RADIUS, getEventBackgroundColor(event))
 
         val specificEventTitlePaint = getEventTitlePaint(event)
-        var taskIconWidth = 0
+        var iconWidth = 0
+
         if (event.isTask) {
             val taskIcon = resources.getColoredDrawableWithColor(R.drawable.ic_task_vector, specificEventTitlePaint.color).mutate()
             val taskIconY = yPos.toInt() + verticalOffset - eventTitleHeight + smallPadding * 2
             taskIcon.setBounds(xPos.toInt() + smallPadding * 2, taskIconY, xPos.toInt() + eventTitleHeight + smallPadding * 2, taskIconY + eventTitleHeight)
             taskIcon.draw(canvas)
-            taskIconWidth += eventTitleHeight + smallPadding
+            iconWidth += eventTitleHeight + smallPadding
+        } else if (config.taskifyEventsMode) {
+            val taskMeta = org.fossify.calendar.helpers.TaskifyHelper.parseTitle(event.title, taskifyModeEnabled = true)
+            if (taskMeta.isImportant) {
+                val importantIcon = resources.getColoredDrawableWithColor(R.drawable.ic_important_vector, specificEventTitlePaint.color).mutate()
+                val iconY = yPos.toInt() + verticalOffset - eventTitleHeight + smallPadding * 2
+                importantIcon.setBounds(xPos.toInt() + smallPadding * 2, iconY, xPos.toInt() + eventTitleHeight + smallPadding * 2, iconY + eventTitleHeight)
+                importantIcon.draw(canvas)
+                iconWidth += eventTitleHeight + smallPadding
+            }
         }
 
-        drawEventTitle(event, canvas, xPos + taskIconWidth, yPos + verticalOffset, bgRight - bgLeft - smallPadding - taskIconWidth, specificEventTitlePaint)
+        val titleForDisplay = if (config.taskifyEventsMode && !event.isTask) {
+            org.fossify.calendar.helpers.TaskifyHelper.getDisplayTitle(event.title)
+        } else {
+            event.title
+        }
+
+        drawEventTitle(titleForDisplay, canvas, xPos + iconWidth, yPos + verticalOffset, bgRight - bgLeft - smallPadding - iconWidth, specificEventTitlePaint)
 
         for (i in 0 until min(event.daysCnt, 7 - event.startDayIndex % 7)) {
             dayVerticalOffsets.put(event.startDayIndex + i, verticalOffset + eventTitleHeight + smallPadding * 2)
         }
     }
 
-    private fun drawEventTitle(event: MonthViewEvent, canvas: Canvas, x: Float, y: Float, availableWidth: Float, paint: Paint) {
-        val ellipsized = TextUtils.ellipsize(event.title, eventTitlePaint, availableWidth - smallPadding, TextUtils.TruncateAt.END)
-        canvas.drawText(event.title, 0, ellipsized.length, x + smallPadding * 2, y, paint)
+    private fun drawEventTitle(title: String, canvas: Canvas, x: Float, y: Float, availableWidth: Float, paint: Paint) {
+        val ellipsized = TextUtils.ellipsize(title, eventTitlePaint, availableWidth - smallPadding, TextUtils.TruncateAt.END)
+        canvas.drawText(title, 0, ellipsized.length, x + smallPadding * 2, y, paint)
     }
 
     private fun getTextPaint(startDay: DayMonthly): Paint {
@@ -439,6 +455,17 @@ class MonthView(context: Context, attrs: AttributeSet, defStyle: Int) : View(con
         val curPaint = Paint(eventTitlePaint)
         curPaint.color = paintColor
         curPaint.isStrikeThruText = event.shouldStrikeThrough()
+
+        if (config.taskifyEventsMode && !event.isTask) {
+            val taskMeta = org.fossify.calendar.helpers.TaskifyHelper.parseTitle(event.title, taskifyModeEnabled = true)
+            if (taskMeta.isImportant) {
+                curPaint.typeface = android.graphics.Typeface.DEFAULT_BOLD
+            }
+            if (taskMeta.isCompleted) {
+                curPaint.isStrikeThruText = true
+            }
+        }
+
         return curPaint
     }
 

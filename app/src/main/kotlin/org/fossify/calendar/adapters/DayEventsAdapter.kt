@@ -1,5 +1,6 @@
 package org.fossify.calendar.adapters
 
+import android.graphics.Typeface
 import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
@@ -10,10 +11,12 @@ import org.fossify.calendar.databinding.EventListItemBinding
 import org.fossify.calendar.dialogs.DeleteEventDialog
 import org.fossify.calendar.extensions.*
 import org.fossify.calendar.helpers.Formatter
+import org.fossify.calendar.helpers.TaskifyHelper
 import org.fossify.calendar.models.Event
 import org.fossify.commons.adapters.MyRecyclerViewAdapter
 import org.fossify.commons.extensions.adjustAlpha
 import org.fossify.commons.extensions.applyColorFilter
+import org.fossify.commons.extensions.beGone
 import org.fossify.commons.extensions.beVisibleIf
 import org.fossify.commons.extensions.getProperTextColor
 import org.fossify.commons.helpers.MEDIUM_ALPHA
@@ -28,6 +31,7 @@ class DayEventsAdapter(activity: SimpleActivity, val events: ArrayList<Event>, r
     private val replaceDescriptionWithLocation = activity.config.replaceDescription
     private val dimPastEvents = activity.config.dimPastEvents
     private val dimCompletedTasks = activity.config.dimCompletedTasks
+    private val taskifyEventsMode = activity.config.taskifyEventsMode
     private var isPrintVersion = false
     private val mediumMargin = activity.resources.getDimension(org.fossify.commons.R.dimen.medium_margin).toInt()
 
@@ -87,9 +91,17 @@ class DayEventsAdapter(activity: SimpleActivity, val events: ArrayList<Event>, r
 
     private fun setupView(view: View, event: Event) {
         EventListItemBinding.bind(view).apply {
+            val taskMeta = if (taskifyEventsMode && !event.isTask()) {
+                TaskifyHelper.parseTitle(event.title, taskifyModeEnabled = true)
+            } else {
+                null
+            }
+
+            val displayTitle = taskMeta?.cleanTitle ?: event.title
+
             eventItemHolder.isSelected = selectedKeys.contains(event.id?.toInt())
             eventItemHolder.background.applyColorFilter(textColor)
-            eventItemTitle.text = event.title
+            eventItemTitle.text = displayTitle
             eventItemTitle.checkViewStrikeThrough(event.shouldStrikeThrough())
             eventItemTime.text = if (event.getIsAllDay()) allDayString else Formatter.getTimeFromTS(activity, event.startTS)
             if (event.startTS != event.endTS) {
@@ -124,19 +136,38 @@ class DayEventsAdapter(activity: SimpleActivity, val events: ArrayList<Event>, r
                 newTextColor = newTextColor.adjustAlpha(MEDIUM_ALPHA)
             }
 
-            eventItemTime.setTextColor(newTextColor)
-            eventItemTitle.setTextColor(newTextColor)
-            eventItemDescription.setTextColor(newTextColor)
-            eventItemTaskImage.applyColorFilter(newTextColor)
-            eventItemTaskImage.beVisibleIf(event.isTask())
+            if (taskMeta != null) {
+                // Taskify Events Mode: apply importance/completion styling
+                val isImportant = taskMeta.isImportant
+                val isCompleted = taskMeta.isCompleted
 
-            val startMargin = if (event.isTask()) {
-                0
+                eventItemTitle.typeface = if (isImportant) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
+                eventItemImportantImage.beVisibleIf(isImportant)
+                eventItemImportantImage.applyColorFilter(newTextColor)
+                eventItemTaskImage.beGone()
+
+                if (isCompleted) {
+                    eventItemTitle.applyTaskifyCompletedStyle(true)
+                } else {
+                    eventItemTitle.setTextColor(newTextColor)
+                }
+
+                eventItemTime.setTextColor(newTextColor)
+                eventItemDescription.setTextColor(newTextColor)
+                (eventItemTitle.layoutParams as ConstraintLayout.LayoutParams).marginStart = 0
             } else {
-                mediumMargin
-            }
+                // Normal event or task
+                eventItemTitle.typeface = Typeface.DEFAULT
+                eventItemImportantImage.beGone()
+                eventItemTitle.setTextColor(newTextColor)
+                eventItemTime.setTextColor(newTextColor)
+                eventItemDescription.setTextColor(newTextColor)
+                eventItemTaskImage.applyColorFilter(newTextColor)
+                eventItemTaskImage.beVisibleIf(event.isTask())
 
-            (eventItemTitle.layoutParams as ConstraintLayout.LayoutParams).marginStart = startMargin
+                val startMargin = if (event.isTask()) 0 else mediumMargin
+                (eventItemTitle.layoutParams as ConstraintLayout.LayoutParams).marginStart = startMargin
+            }
         }
     }
 
