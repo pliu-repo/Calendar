@@ -422,7 +422,7 @@
     <ID>TooGenericExceptionCaught:ReminderWarningDialog.kt$ReminderWarningDialog$e: Exception</ID>
     <ID>TooGenericExceptionCaught:SettingsActivity.kt$SettingsActivity$e: Exception</ID>
     <ID>TooManyFunctions:CalDAVHelper.kt$CalDAVHelper</ID>
-    <ID>TooManyFunctions:Context.kt$org.fossify.calendar.extensions.Context.kt</ID>
+    <ID>TooManyFunctions:Context.kt$org.pblmotion.calendar.extensions.Context.kt</ID>
     <ID>TooManyFunctions:DayEventsAdapter.kt$DayEventsAdapter : MyRecyclerViewAdapter</ID>
     <ID>TooManyFunctions:DayFragmentsHolder.kt$DayFragmentsHolder : MyFragmentHolderNavigationListener</ID>
     <ID>TooManyFunctions:Event.kt$Event : Serializable</ID>
@@ -483,31 +483,31 @@
     <ID>VariableNaming:WeekFragmentsHolder.kt$WeekFragmentsHolder$private val PREFILLED_WEEKS = 151</ID>
     <ID>VariableNaming:WeeklyViewGrid.kt$WeeklyViewGrid$private val ROWS_CNT = 24</ID>
     <ID>VariableNaming:YearFragmentsHolder.kt$YearFragmentsHolder$private val PREFILLED_YEARS = 61</ID>
-    <ID>WildcardImport:Activity.kt$import org.fossify.calendar.helpers.*</ID>
+    <ID>WildcardImport:Activity.kt$import org.pblmotion.calendar.helpers.*</ID>
     <ID>WildcardImport:Activity.kt$import org.fossify.commons.extensions.*</ID>
     <ID>WildcardImport:CustomEventRepeatIntervalDialog.kt$import org.fossify.commons.extensions.*</ID>
     <ID>WildcardImport:CustomPeriodPickerDialog.kt$import org.fossify.commons.extensions.*</ID>
-    <ID>WildcardImport:DayEventsAdapter.kt$import org.fossify.calendar.extensions.*</ID>
-    <ID>WildcardImport:DayFragment.kt$import org.fossify.calendar.helpers.*</ID>
+    <ID>WildcardImport:DayEventsAdapter.kt$import org.pblmotion.calendar.extensions.*</ID>
+    <ID>WildcardImport:DayFragment.kt$import org.pblmotion.calendar.helpers.*</ID>
     <ID>WildcardImport:DayFragment.kt$import org.fossify.commons.extensions.*</ID>
-    <ID>WildcardImport:EventListAdapter.kt$import org.fossify.calendar.extensions.*</ID>
-    <ID>WildcardImport:EventListAdapter.kt$import org.fossify.calendar.helpers.*</ID>
-    <ID>WildcardImport:EventListWidgetAdapter.kt$import org.fossify.calendar.extensions.*</ID>
-    <ID>WildcardImport:EventListWidgetAdapter.kt$import org.fossify.calendar.helpers.*</ID>
-    <ID>WildcardImport:EventListWidgetAdapter.kt$import org.fossify.calendar.models.*</ID>
+    <ID>WildcardImport:EventListAdapter.kt$import org.pblmotion.calendar.extensions.*</ID>
+    <ID>WildcardImport:EventListAdapter.kt$import org.pblmotion.calendar.helpers.*</ID>
+    <ID>WildcardImport:EventListWidgetAdapter.kt$import org.pblmotion.calendar.extensions.*</ID>
+    <ID>WildcardImport:EventListWidgetAdapter.kt$import org.pblmotion.calendar.helpers.*</ID>
+    <ID>WildcardImport:EventListWidgetAdapter.kt$import org.pblmotion.calendar.models.*</ID>
     <ID>WildcardImport:EventListWidgetAdapter.kt$import org.fossify.commons.extensions.*</ID>
-    <ID>WildcardImport:MonthDayFragment.kt$import org.fossify.calendar.extensions.*</ID>
+    <ID>WildcardImport:MonthDayFragment.kt$import org.pblmotion.calendar.extensions.*</ID>
     <ID>WildcardImport:MonthView.kt$import android.graphics.*</ID>
-    <ID>WildcardImport:MonthView.kt$import org.fossify.calendar.extensions.*</ID>
+    <ID>WildcardImport:MonthView.kt$import org.pblmotion.calendar.extensions.*</ID>
     <ID>WildcardImport:MonthView.kt$import org.fossify.commons.extensions.*</ID>
     <ID>WildcardImport:MyWidgetListProvider.kt$import org.fossify.commons.extensions.*</ID>
-    <ID>WildcardImport:MyWidgetMonthlyProvider.kt$import org.fossify.calendar.extensions.*</ID>
+    <ID>WildcardImport:MyWidgetMonthlyProvider.kt$import org.pblmotion.calendar.extensions.*</ID>
     <ID>WildcardImport:MyWidgetMonthlyProvider.kt$import org.fossify.commons.extensions.*</ID>
     <ID>WildcardImport:Parser.kt$import org.fossify.commons.helpers.*</ID>
     <ID>WildcardImport:ReminderWarningDialog.kt$import org.fossify.commons.extensions.*</ID>
     <ID>WildcardImport:RepeatLimitTypePickerDialog.kt$import org.fossify.commons.extensions.*</ID>
-    <ID>WildcardImport:SplashActivity.kt$import org.fossify.calendar.helpers.*</ID>
-    <ID>WildcardImport:WeekFragmentsHolder.kt$import org.fossify.calendar.extensions.*</ID>
+    <ID>WildcardImport:SplashActivity.kt$import org.pblmotion.calendar.helpers.*</ID>
+    <ID>WildcardImport:WeekFragmentsHolder.kt$import org.pblmotion.calendar.extensions.*</ID>
     <ID>WildcardImport:WeekFragmentsHolder.kt$import org.fossify.commons.extensions.*</ID>
     <ID>WildcardImport:WidgetDateConfigureActivity.kt$import org.fossify.commons.extensions.*</ID>
     <ID>WildcardImport:WidgetListConfigureActivity.kt$import org.fossify.commons.extensions.*</ID>
