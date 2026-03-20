@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/fragment_weekly_grid_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <!-- Week navigation row -->
+    <LinearLayout
+        android:id="@+id/weekly_grid_navigation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="@dimen/small_margin">
+
+        <ImageButton
+            android:id="@+id/weekly_grid_prev_week"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_chevron_left_vector"
+            android:contentDescription="@string/previous_week" />
+
+        <org.fossify.commons.views.MyTextView
+            android:id="@+id/weekly_grid_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:textSize="@dimen/day_text_size"
+            android:textStyle="bold" />
+
+        <ImageButton
+            android:id="@+id/weekly_grid_next_week"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_chevron_right_vector"
+            android:contentDescription="@string/next_week" />
+
+    </LinearLayout>
+
+    <!-- Day headers row -->
+    <LinearLayout
+        android:id="@+id/weekly_grid_day_headers"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+    </LinearLayout>
+
+    <!-- Divider -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="?android:attr/listDivider" />
+
+    <!-- Scrollable event grid -->
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/weekly_grid_scroll"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:id="@+id/weekly_grid_columns"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+</LinearLayout>

@@ -39,6 +39,7 @@ import org.fossify.calendar.fragments.MonthDayFragmentsHolder
 import org.fossify.calendar.fragments.MonthFragmentsHolder
 import org.fossify.calendar.fragments.MyFragmentHolder
 import org.fossify.calendar.fragments.WeekFragmentsHolder
+import org.fossify.calendar.fragments.WeeklyGridFragment
 import org.fossify.calendar.fragments.YearFragmentsHolder
 import org.fossify.calendar.helpers.ANNIVERSARY_EVENT
 import org.fossify.calendar.helpers.BIRTHDAY_EVENT
@@ -72,6 +73,7 @@ import org.fossify.calendar.helpers.SOURCE_CONTACT_BIRTHDAY
 import org.fossify.calendar.helpers.UPDATE_BOTTOM
 import org.fossify.calendar.helpers.UPDATE_TOP
 import org.fossify.calendar.helpers.VIEW_TO_OPEN
+import org.fossify.calendar.helpers.WEEKLY_GRID_VIEW
 import org.fossify.calendar.helpers.WEEKLY_VIEW
 import org.fossify.calendar.helpers.WEEK_START_DATE_TIME
 import org.fossify.calendar.helpers.YEAR
@@ -182,7 +184,7 @@ class MainActivity : SimpleActivity(), RefreshRecyclerViewListener {
         )
 
         checkWhatsNewDialog()
-        binding.calendarFab.beVisibleIf(config.storedView != YEARLY_VIEW && config.storedView != WEEKLY_VIEW)
+        binding.calendarFab.beVisibleIf(config.storedView != YEARLY_VIEW && config.storedView != WEEKLY_VIEW && config.storedView != WEEKLY_GRID_VIEW)
         binding.calendarFab.setOnClickListener {
             if (config.allowCreatingTasks) {
                 if (binding.fabExtendedOverlay.isVisible()) {
@@ -605,7 +607,8 @@ class MainActivity : SimpleActivity(), RefreshRecyclerViewListener {
             RadioItem(MONTHLY_VIEW, getString(R.string.monthly_view)),
             RadioItem(MONTHLY_DAILY_VIEW, getString(R.string.monthly_daily_view)),
             RadioItem(YEARLY_VIEW, getString(R.string.yearly_view)),
-            RadioItem(EVENTS_LIST_VIEW, getString(R.string.simple_event_list))
+            RadioItem(EVENTS_LIST_VIEW, getString(R.string.simple_event_list)),
+            RadioItem(WEEKLY_GRID_VIEW, getString(R.string.weekly_grid_view))
         )
 
         RadioGroupDialog(activity = this, items = items, checkedItemId = config.storedView) {
@@ -1087,7 +1090,7 @@ class MainActivity : SimpleActivity(), RefreshRecyclerViewListener {
     }
 
     private fun updateView(view: Int) {
-        binding.calendarFab.beVisibleIf(view != YEARLY_VIEW && view != WEEKLY_VIEW)
+        binding.calendarFab.beVisibleIf(view != YEARLY_VIEW && view != WEEKLY_VIEW && view != WEEKLY_GRID_VIEW)
         val dateCode = getDateCodeToDisplay(view)
         config.storedView = view
         checkSwipeRefreshAvailability()
@@ -1108,9 +1111,9 @@ class MainActivity : SimpleActivity(), RefreshRecyclerViewListener {
         val fragmentDate = fragment.getCurrentDate()
         val viewOrder = arrayListOf(DAILY_VIEW, WEEKLY_VIEW, MONTHLY_VIEW, YEARLY_VIEW)
         val currentViewIndex =
-            viewOrder.indexOf(if (currentView == MONTHLY_DAILY_VIEW) MONTHLY_VIEW else currentView)
+            viewOrder.indexOf(if (currentView == MONTHLY_DAILY_VIEW) MONTHLY_VIEW else if (currentView == WEEKLY_GRID_VIEW) WEEKLY_VIEW else currentView)
         val newViewIndex =
-            viewOrder.indexOf(if (newView == MONTHLY_DAILY_VIEW) MONTHLY_VIEW else newView)
+            viewOrder.indexOf(if (newView == MONTHLY_DAILY_VIEW) MONTHLY_VIEW else if (newView == WEEKLY_GRID_VIEW) WEEKLY_VIEW else newView)
 
         return if (fragmentDate != null && currentViewIndex <= newViewIndex) {
             getDateCodeFormatForView(newView, fragmentDate)
@@ -1121,7 +1124,7 @@ class MainActivity : SimpleActivity(), RefreshRecyclerViewListener {
 
     private fun getDateCodeFormatForView(view: Int, date: DateTime): String {
         return when (view) {
-            WEEKLY_VIEW -> getFirstDayOfWeek(date)
+            WEEKLY_VIEW, WEEKLY_GRID_VIEW -> getFirstDayOfWeek(date)
             YEARLY_VIEW -> date.toString()
             else -> Formatter.getDayCodeFromDateTime(date)
         }
@@ -1145,6 +1148,11 @@ class MainActivity : SimpleActivity(), RefreshRecyclerViewListener {
             )
 
             YEARLY_VIEW -> bundle.putString(YEAR_TO_OPEN, fixedDayCode)
+
+            WEEKLY_GRID_VIEW -> bundle.putString(
+                WEEK_START_DATE_TIME,
+                fixedDayCode ?: getFirstDayOfWeek(DateTime())
+            )
         }
 
         fragment.arguments = bundle
@@ -1155,7 +1163,7 @@ class MainActivity : SimpleActivity(), RefreshRecyclerViewListener {
     }
 
     private fun fixDayCode(dayCode: String? = null): String? = when {
-        config.storedView == WEEKLY_VIEW && (dayCode?.length == DAYCODE_PATTERN.length) -> {
+        (config.storedView == WEEKLY_VIEW || config.storedView == WEEKLY_GRID_VIEW) && (dayCode?.length == DAYCODE_PATTERN.length) -> {
             getFirstDayOfWeek(Formatter.getLocalDateTimeFromCode(dayCode))
         }
 
@@ -1276,6 +1284,7 @@ class MainActivity : SimpleActivity(), RefreshRecyclerViewListener {
         MONTHLY_DAILY_VIEW -> MonthDayFragmentsHolder()
         YEARLY_VIEW -> YearFragmentsHolder()
         EVENTS_LIST_VIEW -> EventListFragment()
+        WEEKLY_GRID_VIEW -> WeeklyGridFragment()
         else -> WeekFragmentsHolder()
     }
 
@@ -1295,7 +1304,7 @@ class MainActivity : SimpleActivity(), RefreshRecyclerViewListener {
 
         binding.calendarFab.beGoneIf(
             supportFragmentManager.backStackEntryCount == 0 &&
-                    (config.storedView == YEARLY_VIEW || config.storedView == WEEKLY_VIEW)
+                    (config.storedView == YEARLY_VIEW || config.storedView == WEEKLY_VIEW || config.storedView == WEEKLY_GRID_VIEW)
         )
         if (supportFragmentManager.backStackEntryCount > 0) {
             showBackNavigationArrow()
@@ -1568,7 +1577,7 @@ class MainActivity : SimpleActivity(), RefreshRecyclerViewListener {
 
     private fun checkSwipeRefreshAvailability() {
         binding.swipeRefreshLayout.isEnabled =
-            config.caldavSync && config.pullToRefresh && config.storedView != WEEKLY_VIEW
+            config.caldavSync && config.pullToRefresh && config.storedView != WEEKLY_VIEW && config.storedView != WEEKLY_GRID_VIEW
         if (!binding.swipeRefreshLayout.isEnabled) {
             binding.swipeRefreshLayout.isRefreshing = false
         }
