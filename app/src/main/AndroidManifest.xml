@@ -38,8 +38,8 @@
     </queries>
 
     <queries>
-        <package android:name="org.fossify.calendar.debug" />
-        <package android:name="org.fossify.calendar" />
+        <package android:name="org.pblmotion.calendar.debug" />
+        <package android:name="org.pblmotion.calendar" />
     </queries>
 
     <uses-feature
@@ -140,7 +140,7 @@
             android:parentActivityName=".activities.SettingsActivity" />
 
         <activity
-            android:name="org.fossify.calendar.activities.EventActivity"
+            android:name="org.pblmotion.calendar.activities.EventActivity"
             android:exported="true"
             android:label="@string/new_event"
             android:launchMode="singleTask"
@@ -176,7 +176,7 @@
             android:name=".activities.SelectTimeZoneActivity"
             android:configChanges="orientation"
             android:exported="false"
-            android:parentActivityName="org.fossify.calendar.activities.EventActivity">
+            android:parentActivityName="org.pblmotion.calendar.activities.EventActivity">
             <meta-data
                 android:name="android.app.default_searchable"
                 android:resource="@xml/searchable" />
