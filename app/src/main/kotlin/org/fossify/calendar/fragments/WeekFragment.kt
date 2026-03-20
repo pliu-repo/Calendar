@@ -40,6 +40,7 @@ import org.fossify.calendar.extensions.getWeeklyViewItemHeight
 import org.fossify.calendar.extensions.intersects
 import org.fossify.calendar.extensions.seconds
 import org.fossify.calendar.extensions.shouldStrikeThrough
+import org.fossify.calendar.extensions.taskMeta
 import org.fossify.calendar.helpers.Config
 import org.fossify.calendar.helpers.EDIT_ALL_OCCURRENCES
 import org.fossify.calendar.helpers.EDIT_FUTURE_OCCURRENCES
