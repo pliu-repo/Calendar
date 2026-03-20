@@ -4,6 +4,7 @@ import android.content.Intent
 import android.graphics.Typeface
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -17,6 +18,7 @@ import org.fossify.calendar.extensions.eventsDB
 import org.fossify.calendar.extensions.eventsHelper
 import org.fossify.calendar.extensions.getFirstDayOfWeekDt
 import org.fossify.calendar.extensions.seconds
+import org.fossify.calendar.helpers.DAY
 import org.fossify.calendar.helpers.EVENT_ID
 import org.fossify.calendar.helpers.EVENT_OCCURRENCE_TS
 import org.fossify.calendar.helpers.Formatter
@@ -49,7 +51,14 @@ class WeeklyGridFragment : MyFragmentHolder() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val dateTimeString = arguments?.getString(WEEK_START_DATE_TIME)
-        val dt = if (dateTimeString != null) DateTime.parse(dateTimeString) ?: DateTime() else DateTime()
+        val dt = if (dateTimeString != null) {
+            try { DateTime.parse(dateTimeString) } catch (e: Exception) {
+                Log.e("WeeklyGridFragment", "Invalid week start date: $dateTimeString", e)
+                DateTime()
+            }
+        } else {
+            DateTime()
+        }
         currentWeekTS = requireContext().getFirstDayOfWeekDt(dt).seconds()
         thisWeekTS = requireContext().getFirstDayOfWeekDt(DateTime()).seconds()
     }
@@ -111,12 +120,16 @@ class WeeklyGridFragment : MyFragmentHolder() {
         val dayEvents = Array<MutableList<Event>>(7) { mutableListOf() }
         events.forEach { event ->
             for (dayIdx in 0..6) {
-                val dayTS = weekStartTS + dayIdx * 86400L
-                if (event.startTS <= dayTS + 86399L && event.endTS >= dayTS) {
+                val dayTS = weekStartTS + dayIdx * DAY
+                if (event.startTS <= dayTS + DAY - 1 && event.endTS >= dayTS) {
                     dayEvents[dayIdx].add(event)
                 }
             }
         }
+
+        val tinyMargin = ctx.resources.getDimensionPixelSize(org.fossify.commons.R.dimen.tiny_margin)
+        val smallMargin = ctx.resources.getDimensionPixelSize(org.fossify.commons.R.dimen.small_margin)
+        val headerTextSizePx = ctx.resources.getDimensionPixelSize(R.dimen.day_monthly_text_size)
 
         binding.weeklyGridDayHeaders.removeAllViews()
         binding.weeklyGridColumns.removeAllViews()
@@ -130,11 +143,11 @@ class WeeklyGridFragment : MyFragmentHolder() {
             // Header
             val headerView = TextView(ctx).apply {
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
-                    setMargins(2, 4, 2, 4)
+                    setMargins(tinyMargin, smallMargin, tinyMargin, smallMargin)
                 }
                 text = "$dayName\n${dayDt.dayOfMonth}"
                 gravity = android.view.Gravity.CENTER
-                textSize = 11f
+                setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, headerTextSizePx.toFloat())
                 setTextColor(if (isToday) primaryColor else textColor)
                 if (isToday) setTypeface(null, Typeface.BOLD)
             }
@@ -144,7 +157,7 @@ class WeeklyGridFragment : MyFragmentHolder() {
             val column = LinearLayout(ctx).apply {
                 orientation = LinearLayout.VERTICAL
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
-                    setMargins(2, 4, 2, 0)
+                    setMargins(tinyMargin, smallMargin, tinyMargin, 0)
                 }
             }
 

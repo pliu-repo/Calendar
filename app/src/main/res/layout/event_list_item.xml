@@ -84,6 +84,7 @@
             android:ellipsize="none"
             android:maxLines="3"
             android:includeFontPadding="false"
+            android:paddingStart="@dimen/tiny_margin"
             android:paddingTop="@dimen/small_margin"
             android:paddingEnd="@dimen/tiny_margin"
             android:paddingBottom="@dimen/tiny_margin"
