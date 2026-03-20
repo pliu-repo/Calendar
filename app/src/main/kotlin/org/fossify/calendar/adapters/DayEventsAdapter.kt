@@ -147,7 +147,7 @@ class DayEventsAdapter(activity: SimpleActivity, val events: ArrayList<Event>, r
                 eventItemTaskImage.beGone()
 
                 if (isCompleted) {
-                    eventItemTitle.applyTaskifyCompletedStyle(true)
+                    eventItemTitle.applyTaskifyCompletedStyle(true, newTextColor.adjustAlpha(MEDIUM_ALPHA))
                 } else {
                     eventItemTitle.setTextColor(newTextColor)
                 }

@@ -1,7 +1,6 @@
 package org.fossify.calendar.extensions
 
 import android.content.res.Resources
-import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.drawable.BitmapDrawable
 import android.widget.TextView
@@ -25,10 +24,12 @@ fun TextView.checkViewStrikeThrough(addFlag: Boolean) {
     }
 }
 
-fun TextView.applyTaskifyCompletedStyle(isCompleted: Boolean) {
+fun TextView.applyTaskifyCompletedStyle(isCompleted: Boolean, dimmedColor: Int? = null) {
     if (isCompleted) {
         paintFlags = paintFlags.addBit(Paint.STRIKE_THRU_TEXT_FLAG)
-        setTextColor(Color.GRAY)
+        if (dimmedColor != null) {
+            setTextColor(dimmedColor)
+        }
     } else {
         paintFlags = paintFlags.removeBit(Paint.STRIKE_THRU_TEXT_FLAG)
     }

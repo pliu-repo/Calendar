@@ -834,7 +834,7 @@ fun Context.addDayEvents(
                     typeface = android.graphics.Typeface.DEFAULT
                 }
                 if (taskifyMeta?.isCompleted == true) {
-                    setTextColor(android.graphics.Color.GRAY)
+                    setTextColor(textColor.adjustAlpha(0.5f))
                 }
                 contentDescription = displayTitle
             }

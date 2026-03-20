@@ -4,6 +4,12 @@ import org.fossify.calendar.models.TaskMeta
 
 object TaskifyHelper {
 
+    /**
+     * Regex to parse task suffixes appended to event titles.
+     * Group 1: clean title (everything before the optional suffix)
+     * Group 2: the suffix itself, one of: [!/C] (important+completed), [!] (important), [C] (completed)
+     * The order of alternation matters: [!/C] must be matched before [!] and [C].
+     */
     private val SUFFIX_REGEX = Regex("""^(.*?)(\s*\[!/C\]|\s*\[!\]|\s*\[C\])?$""")
 
     /**

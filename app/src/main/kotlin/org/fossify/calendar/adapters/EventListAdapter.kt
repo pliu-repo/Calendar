@@ -194,7 +194,7 @@ class EventListAdapter(
                 eventItemTaskImage.beGone()
 
                 if (isCompleted) {
-                    eventItemTitle.applyTaskifyCompletedStyle(true)
+                    eventItemTitle.applyTaskifyCompletedStyle(true, newTextColor.adjustAlpha(MEDIUM_ALPHA))
                 } else {
                     eventItemTitle.setTextColor(newTextColor)
                 }
