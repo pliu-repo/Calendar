@@ -234,6 +234,7 @@
     <string name="taskify_events_mode_description">Convert all events into actionable tasks with importance and completion controls.</string>
     <string name="important">Important</string>
     <string name="completed">Completed</string>
+    <string name="toggle_completion">Toggle completion</string>
 
     <!-- CalDAV sync -->
     <string name="caldav">CalDAV</string>

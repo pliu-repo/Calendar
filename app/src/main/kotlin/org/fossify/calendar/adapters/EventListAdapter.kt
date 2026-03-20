@@ -94,7 +94,7 @@ class EventListAdapter(
         holder.bindView(listItem, allowSingleClick = true, allowLongClick = allowLongClick && listItem is ListEvent) { itemView, _ ->
             when (listItem) {
                 is ListSectionDay -> setupListSectionDay(itemView, listItem)
-                is ListEvent -> setupListEvent(itemView, listItem)
+                is ListEvent -> setupListEvent(itemView, listItem, position)
                 is ListSectionMonth -> setupListSectionMonth(itemView, listItem)
             }
         }
@@ -134,7 +134,23 @@ class EventListAdapter(
         notifyDataSetChanged()
     }
 
-    private fun setupListEvent(view: View, listEvent: ListEvent) {
+    private fun toggleTaskifyCompletion(listEvent: ListEvent, position: Int) {
+        val taskMeta = TaskifyHelper.parseTitle(listEvent.title, taskifyModeEnabled = true)
+        val newTitle = TaskifyHelper.encodeTitle(taskMeta.cleanTitle, taskMeta.isImportant, !taskMeta.isCompleted)
+        // Optimistic update: change in memory immediately so UI refreshes without waiting for DB
+        listEvent.title = newTitle
+        notifyItemChanged(position)
+
+        ensureBackgroundThread {
+            val fullEvent = activity.eventsDB.getEventWithId(listEvent.id)
+            if (fullEvent != null) {
+                fullEvent.title = newTitle
+                activity.eventsHelper.updateEvent(fullEvent, updateAtCalDAV = true, showToasts = false)
+            }
+        }
+    }
+
+    private fun setupListEvent(view: View, listEvent: ListEvent, position: Int) {
         EventListItemBinding.bind(view).apply {
             val taskMeta = if (taskifyEventsMode && !listEvent.isTask) {
                 TaskifyHelper.parseTitle(listEvent.title, taskifyModeEnabled = true)
@@ -184,29 +200,51 @@ class EventListAdapter(
             }
 
             if (taskMeta != null) {
-                // Taskify Events Mode: apply importance/completion styling
                 val isImportant = taskMeta.isImportant
                 val isCompleted = taskMeta.isCompleted
 
-                eventItemTitle.typeface = if (isImportant) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
-                eventItemImportantImage.beVisibleIf(isImportant)
-                eventItemImportantImage.applyColorFilter(newTextColor)
+                // Show completion checkbox, hide task image
+                eventItemCheckbox.beVisibleIf(true)
+                eventItemCheckbox.setImageResource(
+                    if (isCompleted) R.drawable.ic_checkbox_checked_vector
+                    else R.drawable.ic_checkbox_unchecked_vector
+                )
+                eventItemCheckbox.applyColorFilter(newTextColor)
+                eventItemCheckbox.setOnClickListener {
+                    toggleTaskifyCompletion(listEvent, position)
+                }
                 eventItemTaskImage.beGone()
 
+                // Show important icon when applicable
+                eventItemImportantImage.beVisibleIf(isImportant)
+                eventItemImportantImage.applyColorFilter(newTextColor)
+
+                // Apply bold for important tasks
+                eventItemTitle.typeface = if (isImportant) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
+
                 if (isCompleted) {
-                    eventItemTitle.applyTaskifyCompletedStyle(true, newTextColor.adjustAlpha(MEDIUM_ALPHA))
+                    val dimmedColor = newTextColor.adjustAlpha(MEDIUM_ALPHA)
+                    eventItemTitle.setTextColor(dimmedColor)
+                    eventItemTitle.paintFlags = eventItemTitle.paintFlags or android.graphics.Paint.STRIKE_THRU_TEXT_FLAG
+                    eventItemCompletedLine.beVisibleIf(true)
                 } else {
                     eventItemTitle.setTextColor(newTextColor)
+                    eventItemTitle.paintFlags = eventItemTitle.paintFlags and android.graphics.Paint.STRIKE_THRU_TEXT_FLAG.inv()
+                    eventItemCompletedLine.beGone()
                 }
 
                 eventItemTime.setTextColor(newTextColor)
                 eventItemDescription.setTextColor(newTextColor)
                 (eventItemTitle.layoutParams as ConstraintLayout.LayoutParams).marginStart = 0
             } else {
-                // Normal event or task
+                // Normal event or actual task — hide taskify controls
+                eventItemCheckbox.beGone()
+                eventItemCheckbox.setOnClickListener(null)
+                eventItemCompletedLine.beGone()
                 eventItemTitle.typeface = Typeface.DEFAULT
                 eventItemImportantImage.beGone()
                 eventItemTitle.setTextColor(newTextColor)
+                eventItemTitle.paintFlags = eventItemTitle.paintFlags and android.graphics.Paint.STRIKE_THRU_TEXT_FLAG.inv()
                 eventItemTime.setTextColor(newTextColor)
                 eventItemDescription.setTextColor(newTextColor)
                 eventItemTaskImage.applyColorFilter(newTextColor)

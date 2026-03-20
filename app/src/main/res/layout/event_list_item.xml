@@ -31,6 +31,22 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="@id/event_item_title" />
 
+        <!-- Taskify completion checkbox (shown for Taskify events, hidden for tasks/normal events) -->
+        <ImageView
+            android:id="@+id/event_item_checkbox"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:layout_marginStart="@dimen/small_margin"
+            android:contentDescription="@string/toggle_completion"
+            android:paddingTop="@dimen/small_margin"
+            android:paddingBottom="@dimen/small_margin"
+            android:src="@drawable/ic_checkbox_unchecked_vector"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@+id/event_item_title"
+            app:layout_constraintStart_toEndOf="@+id/event_item_color_bar"
+            app:layout_constraintTop_toTopOf="@+id/event_item_title" />
+
+        <!-- Task icon (shown for actual tasks, hidden for Taskify events) -->
         <ImageView
             android:id="@+id/event_item_task_image"
             android:layout_width="wrap_content"
@@ -40,10 +56,12 @@
             android:paddingTop="@dimen/small_margin"
             android:paddingBottom="@dimen/small_margin"
             android:src="@drawable/ic_task_vector"
+            android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="@+id/event_item_title"
-            app:layout_constraintStart_toEndOf="@+id/event_item_color_bar"
+            app:layout_constraintStart_toEndOf="@+id/event_item_checkbox"
             app:layout_constraintTop_toTopOf="@+id/event_item_title" />
 
+        <!-- Important icon (visible only when isImportant == true in Taskify mode) -->
         <ImageView
             android:id="@+id/event_item_important_image"
             android:layout_width="wrap_content"
@@ -73,6 +91,18 @@
             app:layout_constraintStart_toEndOf="@+id/event_item_important_image"
             app:layout_constraintTop_toTopOf="parent"
             tools:text="Event title" />
+
+        <!-- Red strikethrough overlay for completed Taskify events -->
+        <View
+            android:id="@+id/event_item_completed_line"
+            android:layout_width="0dp"
+            android:layout_height="2dp"
+            android:background="@color/taskify_strikethrough"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@+id/event_item_title"
+            app:layout_constraintEnd_toEndOf="@+id/event_item_title"
+            app:layout_constraintStart_toStartOf="@+id/event_item_title"
+            app:layout_constraintTop_toTopOf="@+id/event_item_title" />
 
         <org.fossify.commons.views.MyTextView
             android:id="@+id/event_item_time"

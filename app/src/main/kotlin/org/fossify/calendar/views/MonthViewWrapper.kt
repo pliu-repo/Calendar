@@ -3,11 +3,14 @@ package org.fossify.calendar.views
 import android.content.Context
 import android.util.AttributeSet
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.widget.FrameLayout
 import org.fossify.calendar.R
 import org.fossify.calendar.databinding.MonthViewBackgroundBinding
 import org.fossify.calendar.databinding.MonthViewBinding
 import org.fossify.calendar.extensions.config
+import org.fossify.calendar.extensions.eventsDB
+import org.fossify.calendar.extensions.eventsHelper
 import org.fossify.calendar.extensions.getWeekNumberWidth
 import org.fossify.calendar.extensions.launchNewEventIntent
 import org.fossify.calendar.extensions.launchNewTaskIntent
@@ -16,10 +19,12 @@ import org.fossify.calendar.helpers.Formatter
 import org.fossify.calendar.helpers.ROW_COUNT
 import org.fossify.calendar.helpers.TYPE_EVENT
 import org.fossify.calendar.helpers.TYPE_TASK
+import org.fossify.calendar.helpers.TaskifyHelper
 import org.fossify.calendar.models.DayMonthly
 import org.fossify.commons.compose.extensions.getActivity
 import org.fossify.commons.dialogs.RadioGroupDialog
 import org.fossify.commons.extensions.onGlobalLayout
+import org.fossify.commons.helpers.ensureBackgroundThread
 import org.fossify.commons.models.RadioItem
 
 // used in the Monthly view fragment, 1 view per screen
@@ -38,6 +43,10 @@ class MonthViewWrapper(
     private var inflater: LayoutInflater
     private var binding: MonthViewBinding
     private var dayClickCallback: ((day: DayMonthly) -> Unit)? = null
+
+    /** Last touch position on each day background view, in MonthView coordinate space */
+    private var lastTouchInMonthViewX = 0f
+    private var lastTouchInMonthViewY = 0f
 
     constructor(context: Context, attrs: AttributeSet) : this(context, attrs, 0)
 
@@ -154,7 +163,29 @@ class MonthViewWrapper(
                 )
             }"
 
+            // Track touch position in MonthView coordinates so click handler can hit-test checkboxes
+            setOnTouchListener { v, motionEvent ->
+                if (motionEvent.action == MotionEvent.ACTION_DOWN) {
+                    val monthViewLoc = IntArray(2)
+                    binding.monthView.getLocationOnScreen(monthViewLoc)
+                    val viewLoc = IntArray(2)
+                    v.getLocationOnScreen(viewLoc)
+                    lastTouchInMonthViewX = viewLoc[0] + motionEvent.x - monthViewLoc[0]
+                    lastTouchInMonthViewY = viewLoc[1] + motionEvent.y - monthViewLoc[1]
+                }
+                false  // Don't consume — let ripple and click work normally
+            }
+
             setOnClickListener {
+                // Check if the tap landed on a Taskify checkbox
+                if (context.config.taskifyEventsMode) {
+                    val tappedEventId = binding.monthView.findCheckboxEventIdAt(lastTouchInMonthViewX, lastTouchInMonthViewY)
+                    if (tappedEventId != null) {
+                        toggleTaskifyCompletion(tappedEventId)
+                        return@setOnClickListener
+                    }
+                }
+
                 dayClickCallback?.invoke(day)
 
                 if (isMonthDayView) {
@@ -188,5 +219,22 @@ class MonthViewWrapper(
 
     fun togglePrintMode() {
         binding.monthView.togglePrintMode()
+    }
+
+    /**
+     * Toggles the Taskify completion state for an event identified by [eventId].
+     * Updates the title suffix in the database (and CalDAV) and refreshes the MonthView.
+     */
+    private fun toggleTaskifyCompletion(eventId: Long) {
+        ensureBackgroundThread {
+            val event = context.eventsDB.getEventWithId(eventId) ?: return@ensureBackgroundThread
+            val taskMeta = TaskifyHelper.parseTitle(event.title, taskifyModeEnabled = true)
+            val newTitle = TaskifyHelper.encodeTitle(taskMeta.cleanTitle, taskMeta.isImportant, !taskMeta.isCompleted)
+            event.title = newTitle
+            context.eventsHelper.updateEvent(event, updateAtCalDAV = true, showToasts = false)
+            binding.monthView.post {
+                binding.monthView.updateEventTitle(eventId, newTitle)
+            }
+        }
     }
 }

@@ -65,6 +65,9 @@ class MonthView(context: Context, attrs: AttributeSet, defStyle: Int) : View(con
     private var dayVerticalOffsets = SparseIntArray()
     private var selectedDayCoords = Point(-1, -1)
 
+    /** Tracks bounding boxes of Taskify checkboxes drawn on canvas: (eventId, rect) */
+    private val taskifyCheckboxRects = ArrayList<Pair<Long, RectF>>()
+
     constructor(context: Context, attrs: AttributeSet) : this(context, attrs, 0)
 
     init {
@@ -176,6 +179,7 @@ class MonthView(context: Context, attrs: AttributeSet, defStyle: Int) : View(con
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         dayVerticalOffsets.clear()
+        taskifyCheckboxRects.clear()
         measureDaySize(canvas)
 
         if (config.showGrid && !isMonthDayView) {
@@ -379,12 +383,42 @@ class MonthView(context: Context, attrs: AttributeSet, defStyle: Int) : View(con
             iconWidth += eventTitleHeight + smallPadding
         } else if (config.taskifyEventsMode) {
             val taskMeta = org.fossify.calendar.helpers.TaskifyHelper.parseTitle(event.title, taskifyModeEnabled = true)
+
+            // Draw completion checkbox
+            val checkboxDrawableId = if (taskMeta.isCompleted) {
+                R.drawable.ic_checkbox_checked_vector
+            } else {
+                R.drawable.ic_checkbox_unchecked_vector
+            }
+            val checkboxIcon = resources.getColoredDrawableWithColor(checkboxDrawableId, specificEventTitlePaint.color).mutate()
+            val checkboxLeft = xPos.toInt() + smallPadding * 2
+            val checkboxTop = yPos.toInt() + verticalOffset - eventTitleHeight + smallPadding * 2
+            val checkboxRight = checkboxLeft + eventTitleHeight
+            val checkboxBottom = checkboxTop + eventTitleHeight
+            checkboxIcon.setBounds(checkboxLeft, checkboxTop, checkboxRight, checkboxBottom)
+            checkboxIcon.draw(canvas)
+            // Track this checkbox's bounds for touch hit-testing
+            taskifyCheckboxRects.add(Pair(event.id, RectF(checkboxLeft.toFloat(), checkboxTop.toFloat(), checkboxRight.toFloat(), checkboxBottom.toFloat())))
+            iconWidth += eventTitleHeight + smallPadding
+
+            // Draw important icon if applicable
             if (taskMeta.isImportant) {
                 val importantIcon = resources.getColoredDrawableWithColor(R.drawable.ic_important_vector, specificEventTitlePaint.color).mutate()
+                val iconLeft = xPos.toInt() + smallPadding * 2 + iconWidth
                 val iconY = yPos.toInt() + verticalOffset - eventTitleHeight + smallPadding * 2
-                importantIcon.setBounds(xPos.toInt() + smallPadding * 2, iconY, xPos.toInt() + eventTitleHeight + smallPadding * 2, iconY + eventTitleHeight)
+                importantIcon.setBounds(iconLeft, iconY, iconLeft + eventTitleHeight, iconY + eventTitleHeight)
                 importantIcon.draw(canvas)
                 iconWidth += eventTitleHeight + smallPadding
+            }
+
+            // Draw red strikethrough line for completed events
+            if (taskMeta.isCompleted) {
+                val strikeY = yPos + verticalOffset - eventTitleHeight / 2f + smallPadding
+                val strikePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = resources.getColor(R.color.taskify_strikethrough, null)
+                    strokeWidth = resources.displayMetrics.density * 2f
+                }
+                canvas.drawLine(xPos + iconWidth + smallPadding * 2, strikeY, bgRight - smallPadding, strikeY, strikePaint)
             }
         }
 
@@ -404,6 +438,25 @@ class MonthView(context: Context, attrs: AttributeSet, defStyle: Int) : View(con
     private fun drawEventTitle(title: String, canvas: Canvas, x: Float, y: Float, availableWidth: Float, paint: Paint) {
         val ellipsized = TextUtils.ellipsize(title, eventTitlePaint, availableWidth - smallPadding, TextUtils.TruncateAt.END)
         canvas.drawText(title, 0, ellipsized.length, x + smallPadding * 2, y, paint)
+    }
+
+    /**
+     * Returns the event ID whose Taskify checkbox contains the given (x, y) canvas coordinates,
+     * or null if no checkbox is at that position.
+     */
+    fun findCheckboxEventIdAt(x: Float, y: Float): Long? {
+        return taskifyCheckboxRects.firstOrNull { (_, rect) -> rect.contains(x, y) }?.first
+    }
+
+    /**
+     * Updates the title of an event in memory and redraws. Called after a DB write.
+     */
+    fun updateEventTitle(eventId: Long, newTitle: String) {
+        val idx = allEvents.indexOfFirst { it.id == eventId }
+        if (idx != -1) {
+            allEvents[idx] = allEvents[idx].copy(title = newTitle)
+            invalidate()
+        }
     }
 
     private fun getTextPaint(startDay: DayMonthly): Paint {
