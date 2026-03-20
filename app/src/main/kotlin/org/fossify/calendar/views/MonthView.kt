@@ -147,10 +147,9 @@ class MonthView(context: Context, attrs: AttributeSet, defStyle: Int) : View(con
                 if (shouldAddEvent && !validDayEvent) {
                     val daysCnt = getEventLastingDaysCount(event)
 
-                    val meta = event.taskMeta
                     val monthViewEvent = MonthViewEvent(
                         id = event.id!!,
-                        title = meta.cleanTitle,
+                        title = event.title,
                         startTS = event.startTS,
                         endTS = event.endTS,
                         color = event.color,
@@ -159,9 +158,8 @@ class MonthView(context: Context, attrs: AttributeSet, defStyle: Int) : View(con
                         originalStartDayIndex = dayIndexOnMonthView,
                         isAllDay = event.getIsAllDay(),
                         isPastEvent = event.isPastEvent,
-                        isTask = event.isTask() || meta.isTask,
-                        isTaskCompleted = if (event.isTask()) event.isTaskCompleted() else meta.isCompleted,
-                        isImportant = meta.isImportant,
+                        isTask = event.isTask(),
+                        isTaskCompleted = event.isTaskCompleted(),
                         isAttendeeInviteDeclined = event.isAttendeeInviteDeclined(),
                         isEventCanceled = event.isEventCanceled()
                     )
@@ -441,9 +439,6 @@ class MonthView(context: Context, attrs: AttributeSet, defStyle: Int) : View(con
         val curPaint = Paint(eventTitlePaint)
         curPaint.color = paintColor
         curPaint.isStrikeThruText = event.shouldStrikeThrough()
-        if (event.isImportant) {
-            curPaint.typeface = Typeface.DEFAULT_BOLD
-        }
         return curPaint
     }
 

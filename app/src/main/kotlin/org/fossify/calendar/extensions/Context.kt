@@ -88,6 +88,7 @@ import org.fossify.calendar.services.MarkCompletedService
 import org.fossify.calendar.services.SnoozeService
 import org.fossify.commons.extensions.adjustAlpha
 import org.fossify.commons.extensions.applyColorFilter
+import org.fossify.commons.extensions.beGone
 import org.fossify.commons.extensions.beVisibleIf
 import org.fossify.commons.extensions.createDocumentUriUsingFirstParentTreeUri
 import org.fossify.commons.extensions.createSAFFileSdk30
@@ -816,16 +817,40 @@ fun Context.addDayEvents(
             root.layoutParams = eventLayoutParams
             linearLayout.addView(root)
 
+            val taskifyMeta = if (config.taskifyEventsMode && !it.isTask()) {
+                org.fossify.calendar.helpers.TaskifyHelper.parseTitle(it.title, taskifyModeEnabled = true)
+            } else {
+                null
+            }
+
             dayMonthlyEventId.apply {
                 setTextColor(textColor)
-                text = it.title.replace(" ", "\u00A0")  // allow word break by char
-                checkViewStrikeThrough(it.shouldStrikeThrough())
-                contentDescription = it.title
+                val displayTitle = taskifyMeta?.cleanTitle ?: it.title
+                text = displayTitle.replace(" ", "\u00A0")  // allow word break by char
+                checkViewStrikeThrough(it.shouldStrikeThrough() || (taskifyMeta?.isCompleted == true))
+                if (taskifyMeta?.isImportant == true) {
+                    typeface = android.graphics.Typeface.DEFAULT_BOLD
+                } else {
+                    typeface = android.graphics.Typeface.DEFAULT
+                }
+                if (taskifyMeta?.isCompleted == true) {
+                    setTextColor(textColor.adjustAlpha(0.5f))
+                }
+                contentDescription = displayTitle
             }
 
             dayMonthlyTaskImage.beVisibleIf(it.isTask())
             if (it.isTask()) {
                 dayMonthlyTaskImage.applyColorFilter(textColor)
+            }
+
+            if (taskifyMeta != null) {
+                dayMonthlyImportantImage.beVisibleIf(taskifyMeta.isImportant)
+                if (taskifyMeta.isImportant) {
+                    dayMonthlyImportantImage.applyColorFilter(textColor)
+                }
+            } else {
+                dayMonthlyImportantImage.beGone()
             }
         }
     }

@@ -727,7 +727,6 @@ class WeekFragment : Fragment(), WeeklyCalendar {
 
                     val dayColumn = dayColumns[dayOfWeek]
                     WeekEventMarkerBinding.inflate(layoutInflater).apply {
-                        val meta = event.taskMeta
                         var backgroundColor = if (event.color == 0) {
                             calendarColors.get(event.calendarId, primaryColor)
                         } else {
@@ -736,8 +735,8 @@ class WeekFragment : Fragment(), WeeklyCalendar {
                         var textColor = backgroundColor.getContrastColor()
                         val currentEventWeeklyView = eventTimeRanges[currentDayCode]!![event.id]
 
-                        val adjustAlpha = if (meta.isTask) {
-                            dimCompletedTasks && meta.isCompleted
+                        val adjustAlpha = if (event.isTask()) {
+                            dimCompletedTasks && event.isTaskCompleted()
                         } else {
                             dimPastEvents && event.isPastEvent && !isPrintVersion
                         }
@@ -754,22 +753,21 @@ class WeekFragment : Fragment(), WeeklyCalendar {
                         // compensate grid offset
                         root.y -= (currentEventWeeklyView.range.lower / 60) / 2
 
-                        weekEventTaskImage.beVisibleIf(meta.isTask)
-                        if (meta.isTask) {
+                        weekEventTaskImage.beVisibleIf(event.isTask())
+                        if (event.isTask()) {
                             weekEventTaskImage.applyColorFilter(textColor)
                         }
 
                         weekEventLabel.apply {
                             setTextColor(textColor)
-                            maxLines = if (meta.isTask || event.startTS == event.endTS) {
+                            maxLines = if (event.isTask() || event.startTS == event.endTS) {
                                 1
                             } else {
                                 3
                             }
 
-                            text = meta.cleanTitle
+                            text = event.title
                             checkViewStrikeThrough(event.shouldStrikeThrough())
-                            setTypeface(typeface, if (meta.isImportant) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
                             contentDescription = text
 
                             minHeight = if (event.startTS == event.endTS) {
@@ -789,10 +787,10 @@ class WeekFragment : Fragment(), WeeklyCalendar {
                         }
 
                         root.setOnClickListener {
-                            Intent(context, getActivityToOpen(meta.isTask)).apply {
+                            Intent(context, getActivityToOpen(event.isTask())).apply {
                                 putExtra(EVENT_ID, event.id!!)
                                 putExtra(EVENT_OCCURRENCE_TS, event.startTS)
-                                putExtra(IS_TASK_COMPLETED, meta.isCompleted)
+                                putExtra(IS_TASK_COMPLETED, event.isTaskCompleted())
                                 startActivity(this)
                             }
                         }
@@ -892,7 +890,6 @@ class WeekFragment : Fragment(), WeeklyCalendar {
     @SuppressLint("NewApi")
     private fun addAllDayEvent(event: Event) {
         WeekAllDayEventMarkerBinding.inflate(layoutInflater).apply {
-            val meta = event.taskMeta
             var backgroundColor = if (event.color == 0) {
                 calendarColors.get(event.calendarId, primaryColor)
             } else {
@@ -900,8 +897,8 @@ class WeekFragment : Fragment(), WeeklyCalendar {
             }
             var textColor = backgroundColor.getContrastColor()
 
-            val adjustAlpha = if (meta.isTask) {
-                dimCompletedTasks && meta.isCompleted
+            val adjustAlpha = if (event.isTask()) {
+                dimCompletedTasks && event.isTaskCompleted()
             } else {
                 dimPastEvents && event.isPastEvent && !isPrintVersion
             }
@@ -915,15 +912,14 @@ class WeekFragment : Fragment(), WeeklyCalendar {
 
             weekEventLabel.apply {
                 setTextColor(textColor)
-                maxLines = if (meta.isTask) 1 else 2
-                text = meta.cleanTitle
+                maxLines = if (event.isTask()) 1 else 2
+                text = event.title
                 checkViewStrikeThrough(event.shouldStrikeThrough())
-                setTypeface(typeface, if (meta.isImportant) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
                 contentDescription = text
             }
 
-            weekEventTaskImage.beVisibleIf(meta.isTask)
-            if (meta.isTask) {
+            weekEventTaskImage.beVisibleIf(event.isTask())
+            if (event.isTask()) {
                 weekEventTaskImage.applyColorFilter(textColor)
             }
 
@@ -1021,10 +1017,10 @@ class WeekFragment : Fragment(), WeeklyCalendar {
             calculateExtraHeight()
 
             root.setOnClickListener {
-                Intent(context, getActivityToOpen(meta.isTask)).apply {
+                Intent(context, getActivityToOpen(event.isTask())).apply {
                     putExtra(EVENT_ID, event.id)
                     putExtra(EVENT_OCCURRENCE_TS, event.startTS)
-                    putExtra(IS_TASK_COMPLETED, meta.isCompleted)
+                    putExtra(IS_TASK_COMPLETED, event.isTaskCompleted())
                     startActivity(this)
                 }
             }

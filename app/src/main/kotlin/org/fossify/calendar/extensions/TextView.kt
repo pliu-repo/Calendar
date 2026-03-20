@@ -23,3 +23,15 @@ fun TextView.checkViewStrikeThrough(addFlag: Boolean) {
         paintFlags.removeBit(Paint.STRIKE_THRU_TEXT_FLAG)
     }
 }
+
+fun TextView.applyTaskifyCompletedStyle(isCompleted: Boolean, dimmedColor: Int? = null) {
+    if (isCompleted) {
+        paintFlags = paintFlags.addBit(Paint.STRIKE_THRU_TEXT_FLAG)
+        if (dimmedColor != null) {
+            setTextColor(dimmedColor)
+        }
+    } else {
+        paintFlags = paintFlags.removeBit(Paint.STRIKE_THRU_TEXT_FLAG)
+    }
+}
+

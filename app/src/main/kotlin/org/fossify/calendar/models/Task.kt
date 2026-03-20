@@ -9,7 +9,10 @@ import org.fossify.calendar.helpers.FLAG_TASK_COMPLETED
 
 @Entity(
     tableName = "tasks",
-    indices = [(Index(value = ["id", "task_id"], unique = true))],
+    indices = [
+        Index(value = ["id", "task_id"], unique = true),
+        Index(value = ["task_id"]),
+    ],
     foreignKeys = [ForeignKey(
         entity = Event::class,
         parentColumns = arrayOf("id"),

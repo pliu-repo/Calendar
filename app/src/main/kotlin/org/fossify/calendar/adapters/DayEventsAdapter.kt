@@ -1,6 +1,5 @@
 package org.fossify.calendar.adapters
 
-import android.graphics.Typeface
 import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
@@ -10,7 +9,6 @@ import org.fossify.calendar.activities.SimpleActivity
 import org.fossify.calendar.databinding.EventListItemBinding
 import org.fossify.calendar.dialogs.DeleteEventDialog
 import org.fossify.calendar.extensions.*
-import org.fossify.calendar.helpers.FLAG_TASK_COMPLETED
 import org.fossify.calendar.helpers.Formatter
 import org.fossify.calendar.models.Event
 import org.fossify.commons.adapters.MyRecyclerViewAdapter
@@ -88,13 +86,11 @@ class DayEventsAdapter(activity: SimpleActivity, val events: ArrayList<Event>, r
     }
 
     private fun setupView(view: View, event: Event) {
-        val meta = event.taskMeta
         EventListItemBinding.bind(view).apply {
             eventItemHolder.isSelected = selectedKeys.contains(event.id?.toInt())
             eventItemHolder.background.applyColorFilter(textColor)
-            eventItemTitle.text = meta.cleanTitle
+            eventItemTitle.text = event.title
             eventItemTitle.checkViewStrikeThrough(event.shouldStrikeThrough())
-            eventItemTitle.setTypeface(eventItemTitle.typeface, if (meta.isImportant) Typeface.BOLD else Typeface.NORMAL)
             eventItemTime.text = if (event.getIsAllDay()) allDayString else Formatter.getTimeFromTS(activity, event.startTS)
             if (event.startTS != event.endTS) {
                 val startDayCode = Formatter.getDayCodeFromTS(event.startTS)
@@ -118,9 +114,8 @@ class DayEventsAdapter(activity: SimpleActivity, val events: ArrayList<Event>, r
 
             var newTextColor = textColor
 
-            val isTaskEvent = meta.isTask
-            val adjustAlpha = if (isTaskEvent) {
-                dimCompletedTasks && meta.isCompleted
+            val adjustAlpha = if (event.isTask()) {
+                dimCompletedTasks && event.isTaskCompleted()
             } else {
                 dimPastEvents && event.isPastEvent && !isPrintVersion
             }
@@ -133,32 +128,9 @@ class DayEventsAdapter(activity: SimpleActivity, val events: ArrayList<Event>, r
             eventItemTitle.setTextColor(newTextColor)
             eventItemDescription.setTextColor(newTextColor)
             eventItemTaskImage.applyColorFilter(newTextColor)
-            eventItemTaskImage.beVisibleIf(isTaskEvent)
+            eventItemTaskImage.beVisibleIf(event.isTask())
 
-            if (isTaskEvent) {
-                eventItemTaskImage.setOnClickListener {
-                    val newCompleted = !meta.isCompleted
-                    if (event.isTask()) {
-                        // Native task: update flags immediately so re-bind sees the updated state
-                        if (newCompleted) event.flags = event.flags or FLAG_TASK_COMPLETED
-                        else event.flags = event.flags and FLAG_TASK_COMPLETED.inv()
-                        val idx = events.indexOf(event)
-                        if (idx != -1) notifyItemChanged(idx)
-                        ensureBackgroundThread { activity.updateTaskCompletion(event, newCompleted) }
-                    } else {
-                        // Title-prefix task: rewrite the title prefix, then persist
-                        val prefix = "${if (meta.isImportant) "! " else ""}${if (newCompleted) "[c]" else "[]"} "
-                        event.title = "$prefix${meta.cleanTitle}"
-                        val idx = events.indexOf(event)
-                        if (idx != -1) notifyItemChanged(idx)
-                        ensureBackgroundThread { activity.eventsDB.insertOrUpdate(event) }
-                    }
-                }
-            } else {
-                eventItemTaskImage.setOnClickListener(null)
-            }
-
-            val startMargin = if (isTaskEvent) {
+            val startMargin = if (event.isTask()) {
                 0
             } else {
                 mediumMargin

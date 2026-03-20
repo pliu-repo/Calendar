@@ -220,6 +220,7 @@ class SettingsActivity : SimpleActivity() {
         setupViewToOpenFromListWidget()
         setupDimEvents()
         setupDimCompletedTasks()
+        setupTaskifyEventsMode()
         setupAllowChangingTimeZones()
         updateTextColors(binding.settingsHolder)
         checkPrimaryColor()
@@ -899,6 +900,14 @@ class SettingsActivity : SimpleActivity() {
         settingsDimCompletedTasksHolder.setOnClickListener {
             settingsDimCompletedTasks.toggle()
             config.dimCompletedTasks = settingsDimCompletedTasks.isChecked
+        }
+    }
+
+    private fun setupTaskifyEventsMode() = binding.apply {
+        settingsTaskifyEventsMode.isChecked = config.taskifyEventsMode
+        settingsTaskifyEventsModeHolder.setOnClickListener {
+            settingsTaskifyEventsMode.toggle()
+            config.taskifyEventsMode = settingsTaskifyEventsMode.isChecked
         }
     }
 

@@ -21,6 +21,22 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@id/day_monthly_event_id" />
 
+    <ImageView
+        android:id="@+id/day_monthly_important_image"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:adjustViewBounds="true"
+        android:contentDescription="@string/important"
+        android:paddingStart="@dimen/one_dp"
+        android:paddingTop="@dimen/one_dp"
+        android:paddingBottom="@dimen/one_dp"
+        android:scaleType="fitStart"
+        android:src="@drawable/ic_important_vector"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/day_monthly_event_id"
+        app:layout_constraintStart_toEndOf="@+id/day_monthly_task_image"
+        app:layout_constraintTop_toTopOf="@id/day_monthly_event_id" />
+
     <TextView
         android:id="@+id/day_monthly_event_id"
         android:layout_width="0dp"
@@ -35,7 +51,7 @@
         android:paddingEnd="@dimen/tiny_margin"
         android:textSize="@dimen/day_monthly_text_size"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/day_monthly_task_image"
+        app:layout_constraintStart_toEndOf="@+id/day_monthly_important_image"
         app:layout_constraintTop_toTopOf="parent"
         tools:targetApi="m"
         tools:text="My event" />

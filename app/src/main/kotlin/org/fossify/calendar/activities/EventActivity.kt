@@ -734,6 +734,14 @@ class EventActivity : SimpleActivity() {
         binding.eventLocation.setText(mEvent.location)
         binding.eventDescription.setText(mEvent.description)
 
+        if (config.taskifyEventsMode) {
+            binding.eventTaskifyHolder.visibility = android.view.View.VISIBLE
+            val taskMeta = org.fossify.calendar.helpers.TaskifyHelper.parseTitle(mEvent.title, taskifyModeEnabled = true)
+            binding.eventTitle.setText(taskMeta.cleanTitle)
+            binding.eventImportant.isChecked = taskMeta.isImportant
+            binding.eventCompleted.isChecked = taskMeta.isCompleted
+        }
+
         mReminder1Minutes = mEvent.reminder1Minutes
         mReminder2Minutes = mEvent.reminder2Minutes
         mReminder3Minutes = mEvent.reminder3Minutes
@@ -761,6 +769,10 @@ class EventActivity : SimpleActivity() {
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
         binding.eventTitle.requestFocus()
         binding.eventToolbar.title = getString(R.string.new_event)
+
+        if (config.taskifyEventsMode) {
+            binding.eventTaskifyHolder.visibility = android.view.View.VISIBLE
+        }
 
         val selectedCalendar = mStoredCalendars.firstOrNull { it.id == mCalendarId }
         val selectedCaldavId = selectedCalendar?.caldavCalendarId ?: 0
@@ -1674,7 +1686,15 @@ class EventActivity : SimpleActivity() {
         mEvent.apply {
             startTS = newStartTS
             endTS = newEndTS
-            title = newTitle
+            title = if (config.taskifyEventsMode) {
+                org.fossify.calendar.helpers.TaskifyHelper.encodeTitle(
+                    cleanTitle = newTitle,
+                    isImportant = binding.eventImportant.isChecked,
+                    isCompleted = binding.eventCompleted.isChecked
+                )
+            } else {
+                newTitle
+            }
             description = binding.eventDescription.value
             reminder1Minutes = reminder1.minutes
             reminder2Minutes = reminder2.minutes
