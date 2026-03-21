@@ -35,15 +35,15 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/weekly_grid_event_title" />
 
-    <!-- Event title (wraps up to 3 lines) -->
+    <!-- Event title (wraps up to 2 lines) -->
     <TextView
         android:id="@+id/weekly_grid_event_title"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:ellipsize="end"
-        android:maxLines="1"
+        android:ellipsize="none"
+        android:maxLines="2"
         android:textSize="@dimen/smaller_text_size"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/weekly_grid_event_checkbox"
         app:layout_constraintStart_toEndOf="@+id/weekly_grid_event_important_image"
         app:layout_constraintTop_toTopOf="parent"
         tools:text="Event title" />

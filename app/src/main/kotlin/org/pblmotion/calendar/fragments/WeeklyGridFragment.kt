@@ -15,6 +15,7 @@ import org.pblmotion.calendar.databinding.WeeklyGridDayColumnBinding
 import org.pblmotion.calendar.databinding.WeeklyGridEventItemBinding
 import org.pblmotion.calendar.extensions.checkViewStrikeThrough
 import org.pblmotion.calendar.extensions.config
+import org.pblmotion.calendar.extensions.eventsDB
 import org.pblmotion.calendar.extensions.eventsHelper
 import org.pblmotion.calendar.extensions.getFirstDayOfWeekDt
 import org.pblmotion.calendar.helpers.DAY_CODE
@@ -29,11 +30,13 @@ import org.pblmotion.calendar.models.Event
 import org.fossify.commons.extensions.adjustAlpha
 import org.fossify.commons.extensions.applyColorFilter
 import org.fossify.commons.extensions.beGone
+import org.fossify.commons.extensions.beVisible
 import org.fossify.commons.extensions.beVisibleIf
 import org.fossify.commons.extensions.getProperBackgroundColor
 import org.fossify.commons.extensions.getProperPrimaryColor
 import org.fossify.commons.extensions.getProperTextColor
 import org.fossify.commons.helpers.MEDIUM_ALPHA
+import org.fossify.commons.helpers.ensureBackgroundThread
 import org.joda.time.DateTime
 import org.joda.time.DateTimeConstants
 
@@ -175,9 +178,8 @@ class WeeklyGridFragment : MyFragmentHolder() {
             "${Formatter.getTimeFromTS(requireContext(), event.startTS)} - $displayTitle"
         }
 
-        // Keep weekly grid close to the classic compact look (no color bar/checkbox).
+        // Keep weekly grid close to the classic compact look (no color bar).
         itemBinding.weeklyGridEventColorBar.beGone()
-        itemBinding.weeklyGridEventCheckbox.beGone()
         itemBinding.weeklyGridEventTitle.text = eventTitle
         itemBinding.weeklyGridEventTitle.setTextColor(eventTextColor)
         itemBinding.weeklyGridEventTitle.checkViewStrikeThrough(isCompleted)
@@ -190,12 +192,46 @@ class WeeklyGridFragment : MyFragmentHolder() {
 
         itemBinding.weeklyGridEventCompletedLine.beVisibleIf(isCompleted)
 
+        if (taskifyEventsMode && !event.isTask()) {
+            val checkboxRes = if (isCompleted) R.drawable.ic_checkbox_checked_vector else R.drawable.ic_checkbox_unchecked_vector
+            itemBinding.weeklyGridEventCheckbox.setImageResource(checkboxRes)
+            itemBinding.weeklyGridEventCheckbox.beVisible()
+            itemBinding.weeklyGridEventCheckbox.setOnClickListener {
+                toggleTaskifyCompletion(event, itemBinding, textColor)
+            }
+        } else {
+            itemBinding.weeklyGridEventCheckbox.beGone()
+        }
+
         itemBinding.root.setOnClickListener {
             val intent = Intent(requireContext(), getActivityToOpen(event.isTask()))
             intent.putExtra(EVENT_ID, event.id!!)
             intent.putExtra(EVENT_OCCURRENCE_TS, event.startTS)
             intent.putExtra(IS_TASK_COMPLETED, event.isTaskCompleted())
             startActivity(intent)
+        }
+    }
+
+    private fun toggleTaskifyCompletion(event: Event, itemBinding: WeeklyGridEventItemBinding, textColor: Int) {
+        ensureBackgroundThread {
+            val ctx = requireContext()
+            val freshEvent = ctx.eventsDB.getEventWithId(event.id ?: return@ensureBackgroundThread) ?: return@ensureBackgroundThread
+            val taskMeta = TaskifyHelper.parseTitle(freshEvent.title, taskifyModeEnabled = true)
+            val newCompleted = !taskMeta.isCompleted
+            val newTitle = TaskifyHelper.encodeTitle(taskMeta.cleanTitle, taskMeta.isImportant, newCompleted)
+            freshEvent.title = newTitle
+            ctx.eventsHelper.updateEvent(freshEvent, updateAtCalDAV = true, showToasts = false)
+            event.title = newTitle
+            activity?.runOnUiThread {
+                if (isAdded) {
+                    val newTextColor = if (newCompleted) textColor.adjustAlpha(MEDIUM_ALPHA) else textColor
+                    itemBinding.weeklyGridEventTitle.setTextColor(newTextColor)
+                    itemBinding.weeklyGridEventTitle.checkViewStrikeThrough(newCompleted)
+                    itemBinding.weeklyGridEventCompletedLine.beVisibleIf(newCompleted)
+                    val checkboxRes = if (newCompleted) R.drawable.ic_checkbox_checked_vector else R.drawable.ic_checkbox_unchecked_vector
+                    itemBinding.weeklyGridEventCheckbox.setImageResource(checkboxRes)
+                }
+            }
         }
     }
 
