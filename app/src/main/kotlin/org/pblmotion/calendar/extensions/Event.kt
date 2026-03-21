@@ -9,7 +9,17 @@ import org.joda.time.DateTimeZone
 // Matches task title prefixes: optional "! " for important, then "[]" or "[c]", then the actual title
 private val TASK_PREFIX_REGEX = Regex("""^(! )?\[(c?)\] ?(.*)""", RegexOption.DOT_MATCHES_ALL)
 
-/** Parse a raw event title and extract any embedded task metadata. */
+/**
+ * Parses this raw event title string and extracts any embedded legacy task metadata.
+ *
+ * The legacy prefix format used by Simple/Fossify Tasks is:
+ * - `"[] My task"` → incomplete task
+ * - `"[c] My task"` → completed task
+ * - `"! [] My task"` → important, incomplete task
+ * - `"! [c] My task"` → important, completed task
+ *
+ * @return A [TaskMeta] with the decoded flags, or a "not a task" meta if no prefix is found.
+ */
 fun String.parseTaskMeta(): TaskMeta {
     val match = TASK_PREFIX_REGEX.matchEntire(this)
     return if (match != null) {
@@ -25,12 +35,16 @@ fun String.parseTaskMeta(): TaskMeta {
 }
 
 /**
- * Derive [TaskMeta] for an [Event], merging native task flags with any title-prefix encoding.
+ * Derives [TaskMeta] for this [Event], merging native Room task flags with any title-prefix encoding.
  *
- * - Local tasks (`isTask() == true`) use [Event.isTaskCompleted] for the completed flag and the
- *   title prefix only for the "important" and "clean title" information.
- * - External events that encode task state purely via title prefixes (`[]`/`[c]`) are also
- *   surfaced as tasks even when the `type` field is not [org.pblmotion.calendar.helpers.TYPE_TASK].
+ * Resolution rules (in priority order):
+ * 1. **Local tasks** (`isTask() == true`): use [Event.isTaskCompleted] for the `isCompleted` flag;
+ *    derive `isImportant` and `cleanTitle` from the title prefix if present.
+ * 2. **Prefix-encoded events** (title begins with `[]`/`[c]`): treated as tasks even when
+ *    the database `type` field is not `TYPE_TASK` (e.g., CalDAV events using the old encoding).
+ * 3. **Plain events**: returns a "not a task" meta where `isTask = false` and `cleanTitle = title`.
+ *
+ * @see parseTaskMeta
  */
 val Event.taskMeta: TaskMeta
     get() {
@@ -47,7 +61,15 @@ val Event.taskMeta: TaskMeta
         }
     }
 
-// shifts all-day events to local timezone such that the event starts and ends on the same time as in UTC
+/**
+ * Shifts this all-day event's timestamps from UTC to local timezone.
+ *
+ * All-day events are stored with midnight UTC timestamps. Call this before displaying or
+ * editing such an event locally so that the rendered date matches the user's locale.
+ *
+ * @throws IllegalArgumentException if this event is not an all-day event.
+ * @see toUtcAllDayEvent
+ */
 fun Event.toLocalAllDayEvent() {
     require(this.getIsAllDay()) { "Must be an all day event!" }
 
@@ -59,7 +81,15 @@ fun Event.toLocalAllDayEvent() {
     }
 }
 
-// shifts all-day events to UTC such that the event starts on the same time in UTC too
+/**
+ * Shifts this all-day event's timestamps from local timezone back to UTC.
+ *
+ * Call this before persisting an all-day event so that the stored timestamps are
+ * midnight UTC, compatible with the CalDAV / ICS standard.
+ *
+ * @throws IllegalArgumentException if this event is not an all-day event.
+ * @see toLocalAllDayEvent
+ */
 fun Event.toUtcAllDayEvent() {
     require(getIsAllDay()) { "Must be an all day event!" }
 
@@ -72,7 +102,17 @@ fun Event.toUtcAllDayEvent() {
     endTS = Formatter.getShiftedUtcTS(endTS)
 }
 
-// this is to make sure the repetition ends on the date set when creating the original event
+/**
+ * Adjusts the repeat limit count for an occurrence of a repeating event, so that edits to
+ * future occurrences ("edit this and following") preserve the originally intended end date.
+ *
+ * When the user edits a future occurrence, the occurrence's `repeatLimit` is inherited from
+ * the original event. This function offsets it by the number of occurrences that have already
+ * passed, keeping the repeat end date consistent.
+ *
+ * @param original The unmodified original (parent) event.
+ * @param occurrenceTS The timestamp of the first occurrence that will use the new settings.
+ */
 fun Event.maybeAdjustRepeatLimitCount(original: Event, occurrenceTS: Long) {
     val hasFixedRepeatCount = original.repeatLimit < 0 && repeatLimit < 0
     val repeatLimitUnchanged = original.repeatLimit == repeatLimit
@@ -83,4 +123,12 @@ fun Event.maybeAdjustRepeatLimitCount(original: Event, occurrenceTS: Long) {
     }
 }
 
+/**
+ * Returns `true` when the event title should be rendered with a strike-through style.
+ *
+ * This is `true` for:
+ * - Completed tasks (`taskMeta.isCompleted`)
+ * - Events where the attendee (the user) has declined the invitation
+ * - Cancelled events (CalDAV `STATUS:CANCELLED`)
+ */
 fun Event.shouldStrikeThrough() = taskMeta.isCompleted || isAttendeeInviteDeclined() || isEventCanceled()

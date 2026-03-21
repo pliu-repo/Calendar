@@ -295,24 +295,50 @@ const val CONFIDENTIAL = "CONFIDENTIAL"
 // actions
 const val ACTION_MARK_COMPLETED = "ACTION_MARK_COMPLETED"
 
+/** Returns the current time as a Unix timestamp in **seconds**. */
 fun getNowSeconds() = System.currentTimeMillis() / 1000L
 
+/**
+ * Returns `true` if [dayOfWeek] falls on a Saturday or Sunday.
+ *
+ * @param dayOfWeek A Joda-Time [org.joda.time.DateTimeConstants] weekday constant
+ *   (e.g., `DateTimeConstants.MONDAY`).
+ */
 fun isWeekend(dayOfWeek: Int): Boolean {
     val weekendDays = listOf(DateTimeConstants.SATURDAY, DateTimeConstants.SUNDAY)
     return dayOfWeek in weekendDays
 }
 
+/**
+ * Returns the `Activity` class that should be opened for a given item type.
+ *
+ * - Tasks open [TaskActivity].
+ * - Events open [EventActivity].
+ *
+ * @param isTask `true` if the item is a task, `false` if it is an event.
+ */
 fun getActivityToOpen(isTask: Boolean) = if (isTask) {
     TaskActivity::class.java
 } else {
     EventActivity::class.java
 }
 
+/**
+ * Generates a unique import ID for ICS-imported events.
+ *
+ * The ID is a UUID (with hyphens stripped) concatenated with the current time in milliseconds,
+ * guaranteeing uniqueness even when multiple events are imported at the same millisecond.
+ */
 fun generateImportId(): String {
     return UUID.randomUUID().toString().replace("-", "") + System.currentTimeMillis().toString()
 }
 
-// 6 am is the hardcoded automatic backup time, intervals shorter than 1 day are not yet supported.
+/**
+ * Returns the next scheduled automatic-backup time (always at 06:00 local time).
+ *
+ * If 06:00 today has not yet passed, today's 06:00 is returned; otherwise the next day's
+ * 06:00 is returned. Intervals shorter than one day are not currently supported.
+ */
 fun getNextAutoBackupTime(): DateTime {
     val now = DateTime.now()
     val sixHour = now.withHourOfDay(6)
@@ -323,11 +349,22 @@ fun getNextAutoBackupTime(): DateTime {
     }
 }
 
+/**
+ * Returns the most recent past automatic-backup time (i.e., [getNextAutoBackupTime] minus one day).
+ */
 fun getPreviousAutoBackupTime(): DateTime {
     val nextBackupTime = getNextAutoBackupTime()
     return nextBackupTime.minusDays(AUTO_BACKUP_INTERVAL_IN_DAYS)
 }
 
+/**
+ * Converts a numeric CalendarContract event status code into the corresponding ICS `STATUS` string.
+ *
+ * @param statusCode One of [android.provider.CalendarContract.Events.STATUS_CONFIRMED],
+ *   [android.provider.CalendarContract.Events.STATUS_CANCELED], or
+ *   [android.provider.CalendarContract.Events.STATUS_TENTATIVE].
+ * @return `"CONFIRMED"`, `"CANCELLED"`, or `"TENTATIVE"`.
+ */
 fun getStatusStringFromEventStatus(statusCode: Int): String {
     return when (statusCode) {
         Events.STATUS_CONFIRMED -> CONFIRMED
@@ -336,6 +373,14 @@ fun getStatusStringFromEventStatus(statusCode: Int): String {
     }
 }
 
+/**
+ * Converts a numeric CalendarContract access-level code into the corresponding ICS `CLASS` string.
+ *
+ * @param accessLevel One of [android.provider.CalendarContract.Events.ACCESS_PRIVATE],
+ *   [android.provider.CalendarContract.Events.ACCESS_CONFIDENTIAL], or
+ *   [android.provider.CalendarContract.Events.ACCESS_DEFAULT] / `ACCESS_PUBLIC`.
+ * @return `"PRIVATE"`, `"CONFIDENTIAL"`, or `"PUBLIC"`.
+ */
 fun getAccessLevelStringFromEventAccessLevel(accessLevel: Int): String {
     return when (accessLevel) {
         Events.ACCESS_PRIVATE -> PRIVATE

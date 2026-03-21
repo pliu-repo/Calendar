@@ -40,6 +40,26 @@ import org.fossify.commons.helpers.ensureBackgroundThread
 import org.joda.time.DateTime
 import org.joda.time.DateTimeConstants
 
+/**
+ * A calendar view fragment that displays a full week as a compact 7-day grid.
+ *
+ * Unlike the weekly timeline ([WeekFragmentsHolder]), this fragment renders all seven days
+ * in a two-column layout (pairs of days), making it suitable for a quick per-day overview
+ * without a time axis. It is not backed by a `ViewPager`; instead, a single instance loads
+ * all seven days of the selected week in one shot.
+ *
+ * ## Taskify Events Mode
+ * When [org.pblmotion.calendar.helpers.Config.taskifyEventsMode] is `true`, each event item
+ * shows:
+ * - An **important icon** on the left (if flagged with `[!]`).
+ * - A **checkbox** on the right; tapping it toggles the `[C]` completion suffix and updates
+ *   both the database and the item's visual state in-place.
+ * - A **red strike-through line** and dimmed text colour for completed events.
+ *
+ * ## Navigation argument
+ * Provide the week start date as a day code (`YYYYMMdd`) via the [DAY_CODE] Bundle key.
+ * Use [newInstance] to construct the fragment with the correct argument.
+ */
 class WeeklyGridFragment : MyFragmentHolder() {
 
     private lateinit var binding: FragmentWeeklyGridBinding
@@ -63,6 +83,12 @@ class WeeklyGridFragment : MyFragmentHolder() {
         loadWeekEvents()
     }
 
+    /**
+     * Queries all events for the current week and rebuilds the grid.
+     *
+     * The query runs on a background thread via [EventsHelper.getEvents]; the result is
+     * delivered on the main thread and forwarded to [buildGrid].
+     */
     private fun loadWeekEvents() {
         val weekStart = Formatter.getDateTimeFromCode(weekStartCode)
         val weekStartTS = weekStart.withTimeAtStartOfDay().millis / 1000
@@ -87,6 +113,16 @@ class WeeklyGridFragment : MyFragmentHolder() {
         }
     }
 
+    /**
+     * Inflates and populates each day column in the grid.
+     *
+     * Days are rendered in Sunday–Saturday order. For each day, a [WeeklyGridDayColumnBinding]
+     * is inflated into the matching [FrameLayout] cell. Events are sorted by start time and
+     * each receives a [WeeklyGridEventItemBinding] configured via [setupEventItem].
+     *
+     * @param weekStart The Monday-equivalent start of the week for which data was loaded.
+     * @param grouped A map from day code to the list of events for that day.
+     */
     private fun buildGrid(weekStart: DateTime, grouped: HashMap<String, ArrayList<Event>>) {
         clearGridCells()
         val todayCode = Formatter.getTodayCode()
@@ -136,6 +172,7 @@ class WeeklyGridFragment : MyFragmentHolder() {
         }
     }
 
+    /** Removes all inflated views from every day cell so [buildGrid] can repopulate them. */
     private fun clearGridCells() {
         binding.weeklyGridCellSunday.removeAllViews()
         binding.weeklyGridCellMonday.removeAllViews()
@@ -146,6 +183,12 @@ class WeeklyGridFragment : MyFragmentHolder() {
         binding.weeklyGridCellSaturday.removeAllViews()
     }
 
+    /**
+     * Returns the [FrameLayout] cell that corresponds to [weekday].
+     *
+     * @param weekday A [DateTimeConstants] weekday constant (e.g., [DateTimeConstants.MONDAY]).
+     * @return The matching day-column container in [binding].
+     */
     private fun getContainerForWeekday(weekday: Int): FrameLayout = when (weekday) {
         DateTimeConstants.SUNDAY -> binding.weeklyGridCellSunday
         DateTimeConstants.MONDAY -> binding.weeklyGridCellMonday
@@ -156,6 +199,19 @@ class WeeklyGridFragment : MyFragmentHolder() {
         else -> binding.weeklyGridCellSaturday
     }
 
+    /**
+     * Binds a single event to its grid item view.
+     *
+     * Handles both regular events and Taskify Events Mode rendering:
+     * - In Taskify mode, parses the title suffix and shows the appropriate checkbox, important
+     *   icon, and completed-line overlay.
+     * - In normal mode, hides all Taskify-specific elements.
+     *
+     * @param itemBinding The inflated item view binding.
+     * @param event The event to display.
+     * @param taskifyEventsMode Whether Taskify Events Mode is currently active.
+     * @param textColor The default text colour from the current theme.
+     */
     private fun setupEventItem(
         itemBinding: WeeklyGridEventItemBinding,
         event: Event,
@@ -212,6 +268,20 @@ class WeeklyGridFragment : MyFragmentHolder() {
         }
     }
 
+    /**
+     * Toggles the Taskify completion state of [event] and refreshes the item view in-place.
+     *
+     * The toggle runs on a background thread:
+     * 1. Fetches the freshest version of the event from the database.
+     * 2. Flips the `[C]` completion suffix using [TaskifyHelper.encodeTitle].
+     * 3. Persists the new title via [EventsHelper.updateEvent].
+     * 4. Updates the UI (checkbox drawable, strike-through, text colour, completed-line) on
+     *    the main thread without requiring a full grid reload.
+     *
+     * @param event The in-memory event object (its `title` is updated after the DB write).
+     * @param itemBinding The view binding for the event's row, used for in-place UI updates.
+     * @param textColor The default text colour, used to restore or dim the title text.
+     */
     private fun toggleTaskifyCompletion(event: Event, itemBinding: WeeklyGridEventItemBinding, textColor: Int) {
         ensureBackgroundThread {
             val ctx = requireContext()
@@ -263,6 +333,13 @@ class WeeklyGridFragment : MyFragmentHolder() {
     override fun getCurrentDate(): DateTime? = Formatter.getDateTimeFromCode(weekStartCode)
 
     companion object {
+        /**
+         * Creates a new [WeeklyGridFragment] for the week that contains [weekStartCode].
+         *
+         * @param weekStartCode A day code (`YYYYMMdd`) for any day within the desired week.
+         *   Typically the Monday or Sunday of the week, as determined by
+         *   [org.pblmotion.calendar.extensions.getFirstDayOfWeekDt].
+         */
         fun newInstance(weekStartCode: String): WeeklyGridFragment {
             val fragment = WeeklyGridFragment()
             fragment.arguments = Bundle().apply {
