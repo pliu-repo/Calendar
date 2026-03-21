@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/weekly_grid_day_column"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:layout_weight="1"
+    android:orientation="vertical">
+
+    <!-- Day header (date label) -->
+    <org.fossify.commons.views.MyTextView
+        android:id="@+id/weekly_grid_day_label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:padding="@dimen/small_margin"
+        android:textSize="@dimen/smaller_text_size"
+        android:textStyle="bold" />
+
+    <!-- Divider below header -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@drawable/divider_width"
+        android:importantForAccessibility="no" />
+
+    <!-- Events list for this day -->
+    <LinearLayout
+        android:id="@+id/weekly_grid_day_events"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical" />
+
+</LinearLayout>

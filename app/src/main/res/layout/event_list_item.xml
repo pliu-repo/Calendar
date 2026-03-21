@@ -31,21 +31,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="@id/event_item_title" />
 
-        <!-- Taskify completion checkbox (shown for Taskify events, hidden for tasks/normal events) -->
-        <ImageView
-            android:id="@+id/event_item_checkbox"
-            android:layout_width="wrap_content"
-            android:layout_height="0dp"
-            android:layout_marginStart="@dimen/small_margin"
-            android:contentDescription="@string/toggle_completion"
-            android:paddingTop="@dimen/small_margin"
-            android:paddingBottom="@dimen/small_margin"
-            android:src="@drawable/ic_checkbox_unchecked_vector"
-            android:visibility="gone"
-            app:layout_constraintBottom_toBottomOf="@+id/event_item_title"
-            app:layout_constraintStart_toEndOf="@+id/event_item_color_bar"
-            app:layout_constraintTop_toTopOf="@+id/event_item_title" />
-
         <!-- Task icon (shown for actual tasks, hidden for Taskify events) -->
         <ImageView
             android:id="@+id/event_item_task_image"
@@ -58,7 +43,7 @@
             android:src="@drawable/ic_task_vector"
             android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="@+id/event_item_title"
-            app:layout_constraintStart_toEndOf="@+id/event_item_checkbox"
+            app:layout_constraintStart_toEndOf="@+id/event_item_color_bar"
             app:layout_constraintTop_toTopOf="@+id/event_item_title" />
 
         <!-- Important icon (visible only when isImportant == true in Taskify mode) -->
@@ -80,17 +65,32 @@
             android:id="@+id/event_item_title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:ellipsize="end"
+            android:ellipsize="none"
             android:includeFontPadding="false"
-            android:maxLines="1"
+            android:maxLines="3"
             android:paddingTop="@dimen/small_margin"
-            android:paddingEnd="@dimen/activity_margin"
+            android:paddingEnd="@dimen/tiny_margin"
             android:paddingBottom="@dimen/tiny_margin"
             android:textSize="@dimen/day_text_size"
-            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/event_item_checkbox"
             app:layout_constraintStart_toEndOf="@+id/event_item_important_image"
             app:layout_constraintTop_toTopOf="parent"
             tools:text="Event title" />
+
+        <!-- Taskify completion checkbox on the RIGHT side (shown for Taskify events, hidden for tasks/normal events) -->
+        <ImageView
+            android:id="@+id/event_item_checkbox"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:layout_marginEnd="@dimen/small_margin"
+            android:contentDescription="@string/toggle_completion"
+            android:paddingTop="@dimen/small_margin"
+            android:paddingBottom="@dimen/small_margin"
+            android:src="@drawable/ic_checkbox_unchecked_vector"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@+id/event_item_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/event_item_title" />
 
         <!-- Red strikethrough overlay for completed Taskify events -->
         <View
@@ -116,6 +116,7 @@
             android:paddingBottom="@dimen/small_margin"
             android:textFontWeight="300"
             android:textSize="@dimen/normal_text_size"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/event_item_color_bar"
             app:layout_constraintTop_toBottomOf="@+id/event_item_title"
             tools:text="13:00" />

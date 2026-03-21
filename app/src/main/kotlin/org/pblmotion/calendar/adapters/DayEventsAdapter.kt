@@ -183,11 +183,9 @@ class DayEventsAdapter(activity: SimpleActivity, val events: ArrayList<Event>, r
             eventItemTitle.setTextColor(newTextColor)
             eventItemDescription.setTextColor(newTextColor)
 
-            val startMargin = if (taskifyEventsMode || event.isTask()) {
-                0
-            } else {
-                mediumMargin
-            }
+            // Start margin for title: 0 when there's an icon on the left, medium margin otherwise
+            val hasLeftIcon = (taskifyEventsMode && taskifyMeta?.isImportant == true) || (!taskifyEventsMode && event.isTask())
+            val startMargin = if (hasLeftIcon) 0 else mediumMargin
 
             (eventItemTitle.layoutParams as ConstraintLayout.LayoutParams).marginStart = startMargin
         }

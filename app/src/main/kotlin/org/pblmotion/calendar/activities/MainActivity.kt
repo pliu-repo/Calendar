@@ -28,6 +28,7 @@ import org.pblmotion.calendar.extensions.eventsDB
 import org.pblmotion.calendar.extensions.eventsHelper
 import org.pblmotion.calendar.extensions.getEventListItems
 import org.pblmotion.calendar.extensions.getFirstDayOfWeek
+import org.pblmotion.calendar.extensions.getFirstDayOfWeekDt
 import org.pblmotion.calendar.extensions.launchNewEventIntent
 import org.pblmotion.calendar.extensions.launchNewTaskIntent
 import org.pblmotion.calendar.extensions.seconds
@@ -39,6 +40,7 @@ import org.pblmotion.calendar.fragments.MonthDayFragmentsHolder
 import org.pblmotion.calendar.fragments.MonthFragmentsHolder
 import org.pblmotion.calendar.fragments.MyFragmentHolder
 import org.pblmotion.calendar.fragments.WeekFragmentsHolder
+import org.pblmotion.calendar.fragments.WeeklyGridFragment
 import org.pblmotion.calendar.fragments.YearFragmentsHolder
 import org.pblmotion.calendar.helpers.ANNIVERSARY_EVENT
 import org.pblmotion.calendar.helpers.BIRTHDAY_EVENT
@@ -73,6 +75,7 @@ import org.pblmotion.calendar.helpers.UPDATE_BOTTOM
 import org.pblmotion.calendar.helpers.UPDATE_TOP
 import org.pblmotion.calendar.helpers.VIEW_TO_OPEN
 import org.pblmotion.calendar.helpers.WEEKLY_VIEW
+import org.pblmotion.calendar.helpers.WEEKLY_GRID_VIEW
 import org.pblmotion.calendar.helpers.WEEK_START_DATE_TIME
 import org.pblmotion.calendar.helpers.YEAR
 import org.pblmotion.calendar.helpers.YEARLY_VIEW
@@ -602,6 +605,7 @@ class MainActivity : SimpleActivity(), RefreshRecyclerViewListener {
         val items = arrayListOf(
             RadioItem(DAILY_VIEW, getString(R.string.daily_view)),
             RadioItem(WEEKLY_VIEW, getString(R.string.weekly_view)),
+            RadioItem(WEEKLY_GRID_VIEW, getString(R.string.weekly_grid_view)),
             RadioItem(MONTHLY_VIEW, getString(R.string.monthly_view)),
             RadioItem(MONTHLY_DAILY_VIEW, getString(R.string.monthly_daily_view)),
             RadioItem(YEARLY_VIEW, getString(R.string.yearly_view)),
@@ -1106,7 +1110,7 @@ class MainActivity : SimpleActivity(), RefreshRecyclerViewListener {
         }
 
         val fragmentDate = fragment.getCurrentDate()
-        val viewOrder = arrayListOf(DAILY_VIEW, WEEKLY_VIEW, MONTHLY_VIEW, YEARLY_VIEW)
+        val viewOrder = arrayListOf(DAILY_VIEW, WEEKLY_VIEW, WEEKLY_GRID_VIEW, MONTHLY_VIEW, YEARLY_VIEW)
         val currentViewIndex =
             viewOrder.indexOf(if (currentView == MONTHLY_DAILY_VIEW) MONTHLY_VIEW else currentView)
         val newViewIndex =
@@ -1122,6 +1126,7 @@ class MainActivity : SimpleActivity(), RefreshRecyclerViewListener {
     private fun getDateCodeFormatForView(view: Int, date: DateTime): String {
         return when (view) {
             WEEKLY_VIEW -> getFirstDayOfWeek(date)
+            WEEKLY_GRID_VIEW -> Formatter.getDayCodeFromDateTime(getFirstDayOfWeekDt(date))
             YEARLY_VIEW -> date.toString()
             else -> Formatter.getDayCodeFromDateTime(date)
         }
@@ -1137,6 +1142,11 @@ class MainActivity : SimpleActivity(), RefreshRecyclerViewListener {
             WEEKLY_VIEW -> bundle.putString(
                 WEEK_START_DATE_TIME,
                 fixedDayCode ?: getFirstDayOfWeek(DateTime())
+            )
+
+            WEEKLY_GRID_VIEW -> bundle.putString(
+                DAY_CODE,
+                fixedDayCode ?: Formatter.getDayCodeFromDateTime(getFirstDayOfWeekDt(DateTime()))
             )
 
             MONTHLY_VIEW, MONTHLY_DAILY_VIEW -> bundle.putString(
@@ -1157,6 +1167,10 @@ class MainActivity : SimpleActivity(), RefreshRecyclerViewListener {
     private fun fixDayCode(dayCode: String? = null): String? = when {
         config.storedView == WEEKLY_VIEW && (dayCode?.length == DAYCODE_PATTERN.length) -> {
             getFirstDayOfWeek(Formatter.getLocalDateTimeFromCode(dayCode))
+        }
+
+        config.storedView == WEEKLY_GRID_VIEW && (dayCode?.length == DAYCODE_PATTERN.length) -> {
+            Formatter.getDayCodeFromDateTime(getFirstDayOfWeekDt(Formatter.getLocalDateTimeFromCode(dayCode)))
         }
 
         config.storedView == YEARLY_VIEW && (dayCode?.length == DAYCODE_PATTERN.length) -> {
@@ -1276,6 +1290,9 @@ class MainActivity : SimpleActivity(), RefreshRecyclerViewListener {
         MONTHLY_DAILY_VIEW -> MonthDayFragmentsHolder()
         YEARLY_VIEW -> YearFragmentsHolder()
         EVENTS_LIST_VIEW -> EventListFragment()
+        WEEKLY_GRID_VIEW -> WeeklyGridFragment.newInstance(
+            Formatter.getDayCodeFromDateTime(getFirstDayOfWeekDt(DateTime()))
+        )
         else -> WeekFragmentsHolder()
     }
 

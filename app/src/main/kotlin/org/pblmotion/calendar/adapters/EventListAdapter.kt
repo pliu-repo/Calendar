@@ -223,11 +223,9 @@ class EventListAdapter(
             eventItemTitle.setTextColor(newTextColor)
             eventItemDescription.setTextColor(newTextColor)
 
-            val startMargin = if (taskifyEventsMode || listEvent.isTask) {
-                0
-            } else {
-                mediumMargin
-            }
+            // Start margin for title: 0 when there's an icon on the left, medium margin otherwise
+            val hasLeftIcon = (taskifyEventsMode && listEvent.isImportant) || (!taskifyEventsMode && listEvent.isTask)
+            val startMargin = if (hasLeftIcon) 0 else mediumMargin
 
             (eventItemTitle.layoutParams as ConstraintLayout.LayoutParams).marginStart = startMargin
         }
