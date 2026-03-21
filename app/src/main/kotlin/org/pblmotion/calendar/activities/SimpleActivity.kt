@@ -20,6 +20,8 @@ import org.fossify.commons.helpers.isSPlus
 import org.fossify.commons.helpers.isTiramisuPlus
 
 open class SimpleActivity : BaseSimpleActivity() {
+    override fun getPackageName(): String = "org.fossify.calendar"
+
     val CALDAV_REFRESH_DELAY = 3000L
     val calDAVRefreshHandler = Handler()
     var calDAVRefreshCallback: (() -> Unit)? = null

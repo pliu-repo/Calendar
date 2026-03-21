@@ -1,12 +1,20 @@
 package org.pblmotion.calendar.activities
 
 import android.content.Intent
+import android.os.Bundle
 import org.pblmotion.calendar.extensions.getNewEventTimestampFromCode
 import org.pblmotion.calendar.helpers.*
 import org.fossify.commons.activities.BaseSplashActivity
+import org.fossify.commons.extensions.baseConfig
+import org.fossify.commons.helpers.SIDELOADING_FALSE
 import org.joda.time.DateTime
 
 class SplashActivity : BaseSplashActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        baseConfig.appSideloadingStatus = SIDELOADING_FALSE
+        super.onCreate(savedInstanceState)
+    }
+
     override fun initActivity() {
         when {
             intent.extras?.containsKey(DAY_CODE) == true -> Intent(this, MainActivity::class.java).apply {
