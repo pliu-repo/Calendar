@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.widget.LinearLayout
 import org.pblmotion.calendar.R
 import org.pblmotion.calendar.databinding.FragmentWeeklyGridBinding
@@ -14,7 +15,6 @@ import org.pblmotion.calendar.databinding.WeeklyGridDayColumnBinding
 import org.pblmotion.calendar.databinding.WeeklyGridEventItemBinding
 import org.pblmotion.calendar.extensions.checkViewStrikeThrough
 import org.pblmotion.calendar.extensions.config
-import org.pblmotion.calendar.extensions.eventsDB
 import org.pblmotion.calendar.extensions.eventsHelper
 import org.pblmotion.calendar.extensions.getFirstDayOfWeekDt
 import org.pblmotion.calendar.helpers.DAY_CODE
@@ -29,14 +29,13 @@ import org.pblmotion.calendar.models.Event
 import org.fossify.commons.extensions.adjustAlpha
 import org.fossify.commons.extensions.applyColorFilter
 import org.fossify.commons.extensions.beGone
-import org.fossify.commons.extensions.beVisible
 import org.fossify.commons.extensions.beVisibleIf
 import org.fossify.commons.extensions.getProperBackgroundColor
 import org.fossify.commons.extensions.getProperPrimaryColor
 import org.fossify.commons.extensions.getProperTextColor
 import org.fossify.commons.helpers.MEDIUM_ALPHA
-import org.fossify.commons.helpers.ensureBackgroundThread
 import org.joda.time.DateTime
+import org.joda.time.DateTimeConstants
 
 class WeeklyGridFragment : MyFragmentHolder() {
 
@@ -86,26 +85,42 @@ class WeeklyGridFragment : MyFragmentHolder() {
     }
 
     private fun buildGrid(weekStart: DateTime, grouped: HashMap<String, ArrayList<Event>>) {
-        binding.weeklyGridHeader.removeAllViews()
-        binding.weeklyGridColumns.removeAllViews()
-
+        clearGridCells()
         val todayCode = Formatter.getTodayCode()
         val primaryColor = requireContext().getProperPrimaryColor()
         val textColor = requireContext().getProperTextColor()
         val taskifyEventsMode = requireContext().config.taskifyEventsMode
 
-        for (i in 0 until 7) {
-            val day = weekStart.plusDays(i)
-            val dayCode = Formatter.getDayCodeFromDateTime(day)
-            val events = grouped[dayCode] ?: ArrayList()
-            val isToday = dayCode == todayCode
+        val daysByWeekday = (0 until 7)
+            .map { weekStart.plusDays(it) }
+            .associateBy { it.dayOfWeek }
 
-            val columnBinding = WeeklyGridDayColumnBinding.inflate(layoutInflater, binding.weeklyGridColumns, false)
+        val orderedWeekdays = listOf(
+            DateTimeConstants.SUNDAY,
+            DateTimeConstants.MONDAY,
+            DateTimeConstants.TUESDAY,
+            DateTimeConstants.WEDNESDAY,
+            DateTimeConstants.THURSDAY,
+            DateTimeConstants.FRIDAY,
+            DateTimeConstants.SATURDAY
+        )
+
+        orderedWeekdays.forEach { weekday ->
+            val day = daysByWeekday[weekday] ?: return@forEach
+            val dayCode = Formatter.getDayCodeFromDateTime(day)
+            val events = grouped[dayCode].orEmpty()
+            val isToday = dayCode == todayCode
+            val container = getContainerForWeekday(weekday)
+            val columnBinding = WeeklyGridDayColumnBinding.inflate(layoutInflater, container, false)
+
             columnBinding.weeklyGridDayLabel.apply {
-                val shortDay = day.dayOfWeek().getAsShortText()
-                val dayNum = day.dayOfMonth
-                text = "$shortDay\n$dayNum"
-                setTextColor(if (isToday) primaryColor else textColor)
+                text = day.toString("EEE, M/d/yy")
+                val weekendColor = when (weekday) {
+                    DateTimeConstants.SUNDAY -> resources.getColor(R.color.taskify_strikethrough, null)
+                    DateTimeConstants.SATURDAY -> primaryColor
+                    else -> textColor
+                }
+                setTextColor(if (isToday) primaryColor else weekendColor)
             }
 
             events.sortedBy { it.startTS }.forEach { event ->
@@ -114,11 +129,28 @@ class WeeklyGridFragment : MyFragmentHolder() {
                 columnBinding.weeklyGridDayEvents.addView(eventBinding.root)
             }
 
-            binding.weeklyGridColumns.addView(
-                columnBinding.root,
-                LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-            )
+            container.addView(columnBinding.root)
         }
+    }
+
+    private fun clearGridCells() {
+        binding.weeklyGridCellSunday.removeAllViews()
+        binding.weeklyGridCellMonday.removeAllViews()
+        binding.weeklyGridCellTuesday.removeAllViews()
+        binding.weeklyGridCellWednesday.removeAllViews()
+        binding.weeklyGridCellThursday.removeAllViews()
+        binding.weeklyGridCellFriday.removeAllViews()
+        binding.weeklyGridCellSaturday.removeAllViews()
+    }
+
+    private fun getContainerForWeekday(weekday: Int): FrameLayout = when (weekday) {
+        DateTimeConstants.SUNDAY -> binding.weeklyGridCellSunday
+        DateTimeConstants.MONDAY -> binding.weeklyGridCellMonday
+        DateTimeConstants.TUESDAY -> binding.weeklyGridCellTuesday
+        DateTimeConstants.WEDNESDAY -> binding.weeklyGridCellWednesday
+        DateTimeConstants.THURSDAY -> binding.weeklyGridCellThursday
+        DateTimeConstants.FRIDAY -> binding.weeklyGridCellFriday
+        else -> binding.weeklyGridCellSaturday
     }
 
     private fun setupEventItem(
@@ -137,31 +169,26 @@ class WeeklyGridFragment : MyFragmentHolder() {
         val isCompleted = taskifyMeta?.isCompleted ?: event.isTaskCompleted()
         val isImportant = taskifyMeta?.isImportant ?: false
         val eventTextColor = if (isCompleted) textColor.adjustAlpha(MEDIUM_ALPHA) else textColor
+        val eventTitle = if (event.getIsAllDay()) {
+            displayTitle
+        } else {
+            "${Formatter.getTimeFromTS(requireContext(), event.startTS)} - $displayTitle"
+        }
 
-        itemBinding.weeklyGridEventColorBar.background.applyColorFilter(event.color)
-        itemBinding.weeklyGridEventTitle.text = displayTitle
+        // Keep weekly grid close to the classic compact look (no color bar/checkbox).
+        itemBinding.weeklyGridEventColorBar.beGone()
+        itemBinding.weeklyGridEventCheckbox.beGone()
+        itemBinding.weeklyGridEventTitle.text = eventTitle
         itemBinding.weeklyGridEventTitle.setTextColor(eventTextColor)
         itemBinding.weeklyGridEventTitle.checkViewStrikeThrough(isCompleted)
         itemBinding.weeklyGridEventTitle.setTypeface(null, if (isImportant) Typeface.BOLD else Typeface.NORMAL)
 
         itemBinding.weeklyGridEventImportantImage.beVisibleIf(isImportant)
         if (isImportant) {
-            itemBinding.weeklyGridEventImportantImage.applyColorFilter(eventTextColor)
+            itemBinding.weeklyGridEventImportantImage.applyColorFilter(resources.getColor(R.color.taskify_strikethrough, null))
         }
 
         itemBinding.weeklyGridEventCompletedLine.beVisibleIf(isCompleted)
-
-        if (taskifyEventsMode) {
-            val checkboxRes = if (isCompleted) R.drawable.ic_checkbox_checked_vector else R.drawable.ic_checkbox_unchecked_vector
-            itemBinding.weeklyGridEventCheckbox.setImageResource(checkboxRes)
-            itemBinding.weeklyGridEventCheckbox.applyColorFilter(eventTextColor)
-            itemBinding.weeklyGridEventCheckbox.beVisible()
-            itemBinding.weeklyGridEventCheckbox.setOnClickListener {
-                toggleTaskifyCompletion(event)
-            }
-        } else {
-            itemBinding.weeklyGridEventCheckbox.beGone()
-        }
 
         itemBinding.root.setOnClickListener {
             val intent = Intent(requireContext(), getActivityToOpen(event.isTask()))
@@ -172,19 +199,6 @@ class WeeklyGridFragment : MyFragmentHolder() {
         }
     }
 
-    private fun toggleTaskifyCompletion(event: Event) {
-        ensureBackgroundThread {
-            val freshEvent = requireContext().eventsDB.getEventWithId(event.id ?: return@ensureBackgroundThread) ?: return@ensureBackgroundThread
-            val taskMeta = TaskifyHelper.parseTitle(freshEvent.title, taskifyModeEnabled = true)
-            val newTitle = TaskifyHelper.encodeTitle(taskMeta.cleanTitle, taskMeta.isImportant, !taskMeta.isCompleted)
-            freshEvent.title = newTitle
-            requireContext().eventsHelper.updateEvent(freshEvent, updateAtCalDAV = true, showToasts = false)
-            activity?.runOnUiThread {
-                event.title = newTitle
-                loadWeekEvents()
-            }
-        }
-    }
 
     override fun goToToday() {
         weekStartCode = Formatter.getDayCodeFromDateTime(

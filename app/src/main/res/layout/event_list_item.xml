@@ -80,12 +80,10 @@
         <!-- Taskify completion checkbox on the RIGHT side (shown for Taskify events, hidden for tasks/normal events) -->
         <ImageView
             android:id="@+id/event_item_checkbox"
-            android:layout_width="wrap_content"
-            android:layout_height="0dp"
-            android:layout_marginEnd="@dimen/small_margin"
+            android:layout_width="@dimen/taskify_checkbox_size"
+            android:layout_height="@dimen/taskify_checkbox_size"
+            android:layout_marginEnd="@dimen/taskify_checkbox_margin_end"
             android:contentDescription="@string/toggle_completion"
-            android:paddingTop="@dimen/small_margin"
-            android:paddingBottom="@dimen/small_margin"
             android:src="@drawable/ic_checkbox_unchecked_vector"
             android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="@+id/event_item_title"

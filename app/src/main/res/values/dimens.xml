@@ -31,6 +31,9 @@
 
     <dimen name="event_color_bar_width">16dp</dimen>
     <dimen name="event_color_bar_height">100dp</dimen>
+    <dimen name="taskify_checkbox_size">20dp</dimen>
+    <dimen name="taskify_checkbox_margin_end">8dp</dimen>
+    <dimen name="taskify_important_marker_size">12dp</dimen>
 
     <dimen name="avatar_size">40dp</dimen>
     <dimen name="avatar_status_size">16dp</dimen>

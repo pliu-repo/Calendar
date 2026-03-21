@@ -6,7 +6,8 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="?attr/selectableItemBackground"
-    android:padding="@dimen/tiny_margin">
+    android:paddingTop="@dimen/one_dp"
+    android:paddingBottom="@dimen/one_dp">
 
     <!-- Left color indicator bar -->
     <View
@@ -16,6 +17,7 @@
         android:layout_marginEnd="@dimen/tiny_margin"
         android:background="@drawable/event_list_color_bar"
         android:contentDescription="@null"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="@+id/weekly_grid_event_title"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/weekly_grid_event_title" />
@@ -23,15 +25,14 @@
     <!-- Important icon on the LEFT -->
     <ImageView
         android:id="@+id/weekly_grid_event_important_image"
-        android:layout_width="wrap_content"
-        android:layout_height="0dp"
+        android:layout_width="@dimen/taskify_important_marker_size"
+        android:layout_height="@dimen/taskify_important_marker_size"
+        android:layout_marginEnd="@dimen/tiny_margin"
         android:contentDescription="@string/important"
-        android:paddingTop="@dimen/tiny_margin"
-        android:paddingBottom="@dimen/tiny_margin"
         android:src="@drawable/ic_important_vector"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="@+id/weekly_grid_event_title"
-        app:layout_constraintStart_toEndOf="@+id/weekly_grid_event_color_bar"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/weekly_grid_event_title" />
 
     <!-- Event title (wraps up to 3 lines) -->
@@ -39,12 +40,10 @@
         android:id="@+id/weekly_grid_event_title"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:ellipsize="none"
-        android:maxLines="3"
-        android:paddingTop="@dimen/tiny_margin"
-        android:paddingBottom="@dimen/tiny_margin"
+        android:ellipsize="end"
+        android:maxLines="1"
         android:textSize="@dimen/smaller_text_size"
-        app:layout_constraintEnd_toStartOf="@+id/weekly_grid_event_checkbox"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/weekly_grid_event_important_image"
         app:layout_constraintTop_toTopOf="parent"
         tools:text="Event title" />
@@ -64,13 +63,13 @@
     <!-- Checkbox on the RIGHT (Taskify mode only) -->
     <ImageView
         android:id="@+id/weekly_grid_event_checkbox"
-        android:layout_width="wrap_content"
-        android:layout_height="0dp"
+        android:layout_width="@dimen/taskify_checkbox_size"
+        android:layout_height="@dimen/taskify_checkbox_size"
+        android:layout_marginEnd="@dimen/taskify_checkbox_margin_end"
         android:contentDescription="@string/toggle_completion"
-        android:paddingTop="@dimen/tiny_margin"
-        android:paddingBottom="@dimen/tiny_margin"
         android:src="@drawable/ic_checkbox_unchecked_vector"
         android:visibility="gone"
+        tools:visibility="gone"
         app:layout_constraintBottom_toBottomOf="@+id/weekly_grid_event_title"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@+id/weekly_grid_event_title" />

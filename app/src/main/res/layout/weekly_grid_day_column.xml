@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/weekly_grid_day_column"
-    android:layout_width="0dp"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_weight="1"
     android:orientation="vertical">
 
     <!-- Day header (date label) -->
@@ -11,10 +10,14 @@
         android:id="@+id/weekly_grid_day_label"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center"
-        android:padding="@dimen/small_margin"
+        android:background="@color/divider_grey"
+        android:gravity="start|center_vertical"
+        android:paddingStart="@dimen/small_margin"
+        android:paddingTop="@dimen/tiny_margin"
+        android:paddingEnd="@dimen/small_margin"
+        android:paddingBottom="@dimen/tiny_margin"
         android:textSize="@dimen/smaller_text_size"
-        android:textStyle="bold" />
+        android:textStyle="normal" />
 
     <!-- Divider below header -->
     <View
@@ -28,6 +31,9 @@
         android:id="@+id/weekly_grid_day_events"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:paddingStart="@dimen/tiny_margin"
+        android:paddingEnd="@dimen/tiny_margin"
+        android:paddingBottom="@dimen/tiny_margin"
         android:orientation="vertical" />
 
 </LinearLayout>
