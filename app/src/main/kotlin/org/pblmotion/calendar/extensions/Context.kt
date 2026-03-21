@@ -69,6 +69,7 @@ import org.pblmotion.calendar.helpers.getNextAutoBackupTime
 import org.pblmotion.calendar.helpers.getNowSeconds
 import org.pblmotion.calendar.helpers.getPreviousAutoBackupTime
 import org.pblmotion.calendar.helpers.isWeekend
+import org.pblmotion.calendar.helpers.TaskifyHelper
 import org.pblmotion.calendar.interfaces.CalendarsDao
 import org.pblmotion.calendar.interfaces.EventsDao
 import org.pblmotion.calendar.interfaces.TasksDao
@@ -903,7 +904,11 @@ fun Context.getEventListItems(
             prevCode = code
         }
 
-        val meta = it.taskMeta
+        val meta = if (config.taskifyEventsMode && !it.isTask()) {
+            TaskifyHelper.parseTitle(it.title, taskifyModeEnabled = true)
+        } else {
+            it.taskMeta
+        }
         val listEvent =
             ListEvent(
                 it.id!!,

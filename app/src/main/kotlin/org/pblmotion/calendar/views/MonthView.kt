@@ -12,6 +12,7 @@ import org.pblmotion.calendar.extensions.*
 import org.pblmotion.calendar.helpers.COLUMN_COUNT
 import org.pblmotion.calendar.helpers.Formatter
 import org.pblmotion.calendar.helpers.ROW_COUNT
+import org.pblmotion.calendar.helpers.TaskifyHelper
 import org.pblmotion.calendar.models.DayMonthly
 import org.pblmotion.calendar.models.Event
 import org.pblmotion.calendar.models.MonthViewEvent
@@ -148,9 +149,15 @@ class MonthView(context: Context, attrs: AttributeSet, defStyle: Int) : View(con
                 if (shouldAddEvent && !validDayEvent) {
                     val daysCnt = getEventLastingDaysCount(event)
 
+                    val taskifyMeta = if (config.taskifyEventsMode && !event.isTask()) {
+                        TaskifyHelper.parseTitle(event.title, taskifyModeEnabled = true)
+                    } else {
+                        null
+                    }
+
                     val monthViewEvent = MonthViewEvent(
                         id = event.id!!,
-                        title = event.title,
+                        title = taskifyMeta?.cleanTitle ?: event.title,
                         startTS = event.startTS,
                         endTS = event.endTS,
                         color = event.color,
@@ -160,8 +167,8 @@ class MonthView(context: Context, attrs: AttributeSet, defStyle: Int) : View(con
                         isAllDay = event.getIsAllDay(),
                         isPastEvent = event.isPastEvent,
                         isTask = event.isTask(),
-                        isTaskCompleted = event.isTaskCompleted(),
-                        isImportant = event.taskMeta.isImportant,
+                        isTaskCompleted = taskifyMeta?.isCompleted ?: event.isTaskCompleted(),
+                        isImportant = taskifyMeta?.isImportant ?: event.taskMeta.isImportant,
                         isAttendeeInviteDeclined = event.isAttendeeInviteDeclined(),
                         isEventCanceled = event.isEventCanceled()
                     )
@@ -422,6 +429,7 @@ class MonthView(context: Context, attrs: AttributeSet, defStyle: Int) : View(con
         var paintColor = event.color
 
         val adjustAlpha = when {
+            config.taskifyEventsMode && event.isTaskCompleted -> true
             event.isTask -> dimCompletedTasks && event.isTaskCompleted
             else -> dimPastEvents && event.isPastEvent && !isPrintVersion
         }
@@ -436,6 +444,7 @@ class MonthView(context: Context, attrs: AttributeSet, defStyle: Int) : View(con
     private fun getEventTitlePaint(event: MonthViewEvent): Paint {
         var paintColor = event.color.getContrastColor()
         val adjustAlpha = when {
+            config.taskifyEventsMode && event.isTaskCompleted -> true
             event.isTask -> dimCompletedTasks && event.isTaskCompleted
             else -> dimPastEvents && event.isPastEvent && !isPrintVersion
         }
@@ -447,6 +456,9 @@ class MonthView(context: Context, attrs: AttributeSet, defStyle: Int) : View(con
         val curPaint = Paint(eventTitlePaint)
         curPaint.color = paintColor
         curPaint.isStrikeThruText = event.shouldStrikeThrough()
+        if (config.taskifyEventsMode && event.isImportant) {
+            curPaint.typeface = android.graphics.Typeface.DEFAULT_BOLD
+        }
         return curPaint
     }
 
@@ -539,7 +551,16 @@ class MonthView(context: Context, attrs: AttributeSet, defStyle: Int) : View(con
         allEvents = ArrayList(
             allEvents.map { event ->
                 if (event.id == eventId) {
-                    event.copy(title = newTitle)
+                    if (config.taskifyEventsMode && !event.isTask) {
+                        val taskifyMeta = TaskifyHelper.parseTitle(newTitle, taskifyModeEnabled = true)
+                        event.copy(
+                            title = taskifyMeta.cleanTitle,
+                            isTaskCompleted = taskifyMeta.isCompleted,
+                            isImportant = taskifyMeta.isImportant
+                        )
+                    } else {
+                        event.copy(title = newTitle)
+                    }
                 } else {
                     event
                 }

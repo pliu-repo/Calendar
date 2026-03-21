@@ -1,5 +1,6 @@
 package org.pblmotion.calendar.adapters
 
+import android.graphics.Typeface
 import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
@@ -19,6 +20,8 @@ import org.pblmotion.calendar.models.ListSectionMonth
 import org.fossify.commons.adapters.MyRecyclerViewAdapter
 import org.fossify.commons.extensions.adjustAlpha
 import org.fossify.commons.extensions.applyColorFilter
+import org.fossify.commons.extensions.beGone
+import org.fossify.commons.extensions.beVisible
 import org.fossify.commons.extensions.beVisibleIf
 import org.fossify.commons.extensions.getProperTextColor
 import org.fossify.commons.helpers.MEDIUM_ALPHA
@@ -36,6 +39,7 @@ class EventListAdapter(
     private val replaceDescription = activity.config.replaceDescription
     private val dimPastEvents = activity.config.dimPastEvents
     private val dimCompletedTasks = activity.config.dimCompletedTasks
+    private val taskifyEventsMode = activity.config.taskifyEventsMode
     private val now = getNowSeconds()
     private var use24HourFormat = activity.config.use24HourFormat
     private var currentItemsHash = listItems.hashCode()
@@ -160,7 +164,10 @@ class EventListAdapter(
                     newTextColor = properPrimaryColor
                 }
 
-                val adjustAlpha = if (listEvent.isTask) {
+                val adjustAlpha = if (taskifyEventsMode) {
+                    // In Taskify mode, dimming of completed events is handled in the Taskify section below
+                    dimPastEvents && listEvent.isPastEvent && !listEvent.isTaskCompleted && !isPrintVersion
+                } else if (listEvent.isTask) {
                     dimCompletedTasks && listEvent.isTaskCompleted
                 } else {
                     dimPastEvents && listEvent.isPastEvent && !isPrintVersion
@@ -172,19 +179,71 @@ class EventListAdapter(
                 newTextColor = properPrimaryColor
             }
 
+            if (taskifyEventsMode) {
+                // In Taskify mode: show checkbox for all events, hide task icon
+                eventItemTaskImage.beGone()
+
+                val checkboxRes = if (listEvent.isTaskCompleted) {
+                    R.drawable.ic_checkbox_checked_vector
+                } else {
+                    R.drawable.ic_checkbox_unchecked_vector
+                }
+                eventItemCheckbox.setImageResource(checkboxRes)
+                eventItemCheckbox.applyColorFilter(newTextColor)
+                eventItemCheckbox.beVisible()
+                eventItemCheckbox.setOnClickListener {
+                    toggleTaskifyCompletion(listEvent)
+                }
+
+                // Show important icon when event is important
+                eventItemImportantImage.beVisibleIf(listEvent.isImportant)
+                if (listEvent.isImportant) {
+                    eventItemImportantImage.applyColorFilter(newTextColor)
+                    eventItemTitle.setTypeface(null, Typeface.BOLD)
+                } else {
+                    eventItemTitle.setTypeface(null, Typeface.NORMAL)
+                }
+
+                // Show red completed line and dim text for completed events
+                eventItemCompletedLine.beVisibleIf(listEvent.isTaskCompleted)
+                if (listEvent.isTaskCompleted) {
+                    newTextColor = newTextColor.adjustAlpha(MEDIUM_ALPHA)
+                }
+            } else {
+                // Normal mode: hide Taskify elements, show task icon for real tasks
+                eventItemCheckbox.beGone()
+                eventItemImportantImage.beGone()
+                eventItemCompletedLine.beGone()
+                eventItemTitle.setTypeface(null, Typeface.NORMAL)
+                eventItemTaskImage.applyColorFilter(newTextColor)
+                eventItemTaskImage.beVisibleIf(listEvent.isTask)
+            }
+
             eventItemTime.setTextColor(newTextColor)
             eventItemTitle.setTextColor(newTextColor)
             eventItemDescription.setTextColor(newTextColor)
-            eventItemTaskImage.applyColorFilter(newTextColor)
-            eventItemTaskImage.beVisibleIf(listEvent.isTask)
 
-            val startMargin = if (listEvent.isTask) {
+            val startMargin = if (taskifyEventsMode || listEvent.isTask) {
                 0
             } else {
                 mediumMargin
             }
 
             (eventItemTitle.layoutParams as ConstraintLayout.LayoutParams).marginStart = startMargin
+        }
+    }
+
+    private fun toggleTaskifyCompletion(listEvent: ListEvent) {
+        ensureBackgroundThread {
+            val event = activity.eventsDB.getEventWithId(listEvent.id) ?: return@ensureBackgroundThread
+            val taskMeta = TaskifyHelper.parseTitle(event.title, taskifyModeEnabled = true)
+            val newTitle = TaskifyHelper.encodeTitle(taskMeta.cleanTitle, taskMeta.isImportant, !taskMeta.isCompleted)
+            event.title = newTitle
+            activity.eventsHelper.updateEvent(event, updateAtCalDAV = true, showToasts = false)
+            activity.runOnUiThread {
+                listEvent.isTaskCompleted = !listEvent.isTaskCompleted
+                notifyDataSetChanged()
+            }
         }
     }
 
