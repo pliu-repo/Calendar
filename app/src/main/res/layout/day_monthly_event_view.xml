@@ -46,7 +46,7 @@
         android:ellipsize="none"
         android:gravity="start"
         android:hyphenationFrequency="none"
-        android:maxLines="1"
+        android:maxLines="3"
         android:paddingStart="@dimen/tiny_margin"
         android:paddingEnd="@dimen/tiny_margin"
         android:textSize="@dimen/day_monthly_text_size"

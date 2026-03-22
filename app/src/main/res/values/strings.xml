@@ -4,6 +4,7 @@
     <string name="change_view">Change view</string>
     <string name="daily_view">Daily view</string>
     <string name="weekly_view">Weekly view</string>
+    <string name="weekly_grid_view">Weekly grid view</string>
     <string name="monthly_view">Monthly view</string>
     <string name="monthly_daily_view">Monthly and daily view</string>
     <string name="yearly_view">Yearly view</string>

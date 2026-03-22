@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     android:paddingTop="@dimen/medium_margin">
 
-    <org.fossify.calendar.views.MonthViewWrapper
+    <org.pblmotion.calendar.views.MonthViewWrapper
         android:id="@+id/month_day_view_wrapper"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
