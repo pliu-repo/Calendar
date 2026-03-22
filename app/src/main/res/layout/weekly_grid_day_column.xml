@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/weekly_grid_day_column"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     android:orientation="vertical">
 
     <!-- Day header (date label) -->
@@ -30,7 +30,8 @@
     <LinearLayout
         android:id="@+id/weekly_grid_day_events"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:paddingStart="@dimen/tiny_margin"
         android:paddingEnd="@dimen/tiny_margin"
         android:paddingBottom="@dimen/tiny_margin"
