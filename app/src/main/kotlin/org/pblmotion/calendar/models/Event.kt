@@ -73,6 +73,21 @@ data class Event(
         private const val serialVersionUID = -32456795132345616L
     }
 
+    /**
+     * Advances [startTS] and [endTS] by one repetition step, modifying this event in-place.
+     *
+     * The step size depends on [repeatInterval] and [repeatRule]:
+     * - **Daily**: advances by one calendar day.
+     * - **Weekly** (every N weeks): advances by one calendar day so the engine can find all
+     *   days-of-week that trigger within the week before moving to the next cycle.
+     * - **Monthly** (`REPEAT_SAME_DAY`): preserves the same day-of-month, skipping months
+     *   that don't have that day (e.g., 31st of month in a 30-day month).
+     * - **Monthly / Yearly** (`REPEAT_ORDER_WEEKDAY` / `REPEAT_ORDER_WEEKDAY_USE_LAST`):
+     *   lands on the Nth (or last) weekday of the target month/year.
+     * - **Yearly** (same day): handles 29 Feb by skipping non-leap years.
+     *
+     * @param original The unmodified original event used as reference for ordinal calculations.
+     */
     fun addIntervalTime(original: Event) {
         val oldStart = Formatter.getDateTimeFromTS(startTS)
         val newStart = when (repeatInterval) {
@@ -181,16 +196,32 @@ data class Event(
 
     fun getIsAllDay() = flags and FLAG_ALL_DAY != 0
     fun hasMissingYear() = flags and FLAG_MISSING_YEAR != 0
+
+    /** Returns `true` if this event is a task (`type == TYPE_TASK`). */
     fun isTask() = type == TYPE_TASK
+
+    /** Returns `true` if this is a task **and** the `FLAG_TASK_COMPLETED` bit is set in [flags]. */
     fun isTaskCompleted() = isTask() && flags and FLAG_TASK_COMPLETED != 0
 
+    /**
+     * Returns the configured reminders for this event, excluding disabled ones.
+     *
+     * Each [Reminder] pairs a number of minutes before the event with a delivery type
+     * ([REMINDER_NOTIFICATION] or [REMINDER_EMAIL]). Reminders set to [REMINDER_OFF] are
+     * filtered out.
+     */
     fun getReminders() = listOf(
         Reminder(reminder1Minutes, reminder1Type),
         Reminder(reminder2Minutes, reminder2Type),
         Reminder(reminder3Minutes, reminder3Type)
     ).filter { it.minutes != REMINDER_OFF }
 
-    // properly return the start time of all-day events as midnight
+    /**
+     * Returns the event start timestamp, normalised to midnight for all-day events.
+     *
+     * All-day events are stored with arbitrary-time timestamps; this normalises them to
+     * midnight so alarm scheduling and display use consistent values.
+     */
     fun getEventStartTS(): Long {
         return if (getIsAllDay()) {
             Formatter.getDateTimeFromTS(startTS).withTime(0, 0, 0, 0).seconds()
@@ -199,6 +230,12 @@ data class Event(
         }
     }
 
+    /**
+     * Extracts the CalDAV event ID from [importId].
+     *
+     * CalDAV import IDs are formatted as `"<uuid>-<calDAVEventId>"`. Returns `0` if the ID
+     * cannot be parsed or is not present.
+     */
     fun getCalDAVEventId(): Long {
         return try {
             (importId.split("-").lastOrNull() ?: "0").toString().toLong()
@@ -207,11 +244,31 @@ data class Event(
         }
     }
 
+    /**
+     * Extracts the CalDAV calendar ID from the [source] field.
+     *
+     * CalDAV events have a source formatted as `"Caldav-<calendarId>"`. Returns `0` for
+     * locally-created events.
+     */
     fun getCalDAVCalendarId() =
         if (source.startsWith(CALDAV)) (source.split("-").lastOrNull() ?: "0").toString()
             .toInt() else 0
 
-    // check if it's the proper week, for events repeating every x weeks
+    /**
+     * Determines whether this occurrence falls on the correct week cycle for a multi-week
+     * repeating event.
+     *
+     * Events that repeat every N weeks should only fire in weeks that are a multiple of N
+     * from the original start week. This method computes how many full ISO weeks have elapsed
+     * since the original event's start and checks divisibility.
+     *
+     * **Note:** The week start is hard-coded to Monday (ISO 8601). This may differ from the
+     * user's "Start of week" preference and could be improved in a future revision.
+     *
+     * @param startTimes A sparse array mapping event ID → original start timestamp, used to
+     *   find the canonical week-start reference for this event.
+     * @return `true` if this occurrence is in a valid repeat-cycle week.
+     */
     fun isOnProperWeek(startTimes: LongSparseArray<Long>): Boolean {
         // Note that the code below hard-codes the start of the week to be Monday. This affects events that repeat on
         // multiple days of the week. Ideally this should be configurable; but doing it properly will require some work.
@@ -230,6 +287,12 @@ data class Event(
         return weeks % (repeatInterval / WEEK) == 0
     }
 
+    /**
+     * Updates [isPastEvent] based on whether [endTS] is in the past.
+     *
+     * For all-day events that started before now, the end-of-day timestamp is used rather than
+     * the raw [endTS], so all-day events appear as past only after their day has fully elapsed.
+     */
     fun updateIsPastEvent() {
         val endTSToCheck = if (startTS < getNowSeconds() && getIsAllDay()) {
             Formatter.getDayEndTS(Formatter.getDayCodeFromTS(endTS))
@@ -239,6 +302,15 @@ data class Event(
         isPastEvent = endTSToCheck < getNowSeconds()
     }
 
+    /**
+     * Marks [dayCode] as a skipped occurrence for this repeating event.
+     *
+     * When a user deletes a single occurrence of a repeating event, the day code of that
+     * occurrence is added to [repetitionExceptions]. Future calls to the event-expansion
+     * engine will skip that date. Duplicates are automatically removed.
+     *
+     * @param dayCode The day code (`YYYYMMdd`) of the occurrence to exclude.
+     */
     fun addRepetitionException(dayCode: String) {
         var newRepetitionExceptions = repetitionExceptions.toMutableList()
         newRepetitionExceptions.add(dayCode)

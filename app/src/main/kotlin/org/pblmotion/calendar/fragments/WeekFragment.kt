@@ -55,6 +55,7 @@ import org.pblmotion.calendar.helpers.TYPE_EVENT
 import org.pblmotion.calendar.helpers.TYPE_TASK
 import org.pblmotion.calendar.helpers.WEEK_START_TIMESTAMP
 import org.pblmotion.calendar.helpers.WeeklyCalendarImpl
+import org.pblmotion.calendar.helpers.TaskifyHelper
 import org.pblmotion.calendar.helpers.getActivityToOpen
 import org.pblmotion.calendar.helpers.isWeekend
 import org.pblmotion.calendar.interfaces.WeekFragmentListener
@@ -118,6 +119,7 @@ class WeekFragment : Fragment(), WeeklyCalendar {
     private var wasExtraHeightAdded = false
     private var dimPastEvents = true
     private var dimCompletedTasks = true
+    private var taskifyEventsMode = false
     private var highlightWeekends = false
     private var wasScaled = false
     private var isPrintVersion = false
@@ -148,6 +150,7 @@ class WeekFragment : Fragment(), WeeklyCalendar {
         weekDateTime = Formatter.getDateTimeFromTS(weekTimestamp)
         dimPastEvents = config.dimPastEvents
         dimCompletedTasks = config.dimCompletedTasks
+        taskifyEventsMode = config.taskifyEventsMode
         highlightWeekends = config.highlightWeekends
         primaryColor = requireContext().getProperPrimaryColor()
         allDayRows.add(HashSet())
@@ -735,7 +738,17 @@ class WeekFragment : Fragment(), WeeklyCalendar {
                         var textColor = backgroundColor.getContrastColor()
                         val currentEventWeeklyView = eventTimeRanges[currentDayCode]!![event.id]
 
-                        val adjustAlpha = if (event.isTask()) {
+                        val taskifyMeta = if (taskifyEventsMode && !event.isTask()) {
+                            TaskifyHelper.parseTitle(event.title, taskifyModeEnabled = true)
+                        } else {
+                            null
+                        }
+                        val isTaskifyCompleted = taskifyMeta?.isCompleted ?: false
+                        val isTaskifyImportant = taskifyMeta?.isImportant ?: false
+
+                        val adjustAlpha = if (taskifyEventsMode) {
+                            isTaskifyCompleted
+                        } else if (event.isTask()) {
                             dimCompletedTasks && event.isTaskCompleted()
                         } else {
                             dimPastEvents && event.isPastEvent && !isPrintVersion
@@ -753,9 +766,18 @@ class WeekFragment : Fragment(), WeeklyCalendar {
                         // compensate grid offset
                         root.y -= (currentEventWeeklyView.range.lower / 60) / 2
 
-                        weekEventTaskImage.beVisibleIf(event.isTask())
-                        if (event.isTask()) {
-                            weekEventTaskImage.applyColorFilter(textColor)
+                        if (taskifyEventsMode) {
+                            weekEventTaskImage.beGone()
+                            weekEventImportantImage.beVisibleIf(isTaskifyImportant)
+                            if (isTaskifyImportant) {
+                                weekEventImportantImage.applyColorFilter(textColor)
+                            }
+                        } else {
+                            weekEventTaskImage.beVisibleIf(event.isTask())
+                            if (event.isTask()) {
+                                weekEventTaskImage.applyColorFilter(textColor)
+                            }
+                            weekEventImportantImage.beGone()
                         }
 
                         weekEventLabel.apply {
@@ -766,9 +788,16 @@ class WeekFragment : Fragment(), WeeklyCalendar {
                                 3
                             }
 
-                            text = event.title
-                            checkViewStrikeThrough(event.shouldStrikeThrough())
+                            val displayTitle = taskifyMeta?.cleanTitle ?: event.title
+                            text = displayTitle
+                            checkViewStrikeThrough(event.shouldStrikeThrough() || isTaskifyCompleted)
                             contentDescription = text
+
+                            if (isTaskifyImportant) {
+                                setTypeface(null, android.graphics.Typeface.BOLD)
+                            } else {
+                                setTypeface(null, android.graphics.Typeface.NORMAL)
+                            }
 
                             minHeight = if (event.startTS == event.endTS) {
                                 minimalHeight
@@ -897,7 +926,17 @@ class WeekFragment : Fragment(), WeeklyCalendar {
             }
             var textColor = backgroundColor.getContrastColor()
 
-            val adjustAlpha = if (event.isTask()) {
+            val taskifyMeta = if (taskifyEventsMode && !event.isTask()) {
+                TaskifyHelper.parseTitle(event.title, taskifyModeEnabled = true)
+            } else {
+                null
+            }
+            val isTaskifyCompleted = taskifyMeta?.isCompleted ?: false
+            val isTaskifyImportant = taskifyMeta?.isImportant ?: false
+
+            val adjustAlpha = if (taskifyEventsMode) {
+                isTaskifyCompleted
+            } else if (event.isTask()) {
                 dimCompletedTasks && event.isTaskCompleted()
             } else {
                 dimPastEvents && event.isPastEvent && !isPrintVersion
@@ -913,14 +952,29 @@ class WeekFragment : Fragment(), WeeklyCalendar {
             weekEventLabel.apply {
                 setTextColor(textColor)
                 maxLines = if (event.isTask()) 1 else 2
-                text = event.title
-                checkViewStrikeThrough(event.shouldStrikeThrough())
+                val displayTitle = taskifyMeta?.cleanTitle ?: event.title
+                text = displayTitle
+                checkViewStrikeThrough(event.shouldStrikeThrough() || isTaskifyCompleted)
                 contentDescription = text
+                if (isTaskifyImportant) {
+                    setTypeface(null, android.graphics.Typeface.BOLD)
+                } else {
+                    setTypeface(null, android.graphics.Typeface.NORMAL)
+                }
             }
 
-            weekEventTaskImage.beVisibleIf(event.isTask())
-            if (event.isTask()) {
-                weekEventTaskImage.applyColorFilter(textColor)
+            if (taskifyEventsMode) {
+                weekEventTaskImage.beGone()
+                weekEventImportantImage.beVisibleIf(isTaskifyImportant)
+                if (isTaskifyImportant) {
+                    weekEventImportantImage.applyColorFilter(textColor)
+                }
+            } else {
+                weekEventTaskImage.beVisibleIf(event.isTask())
+                if (event.isTask()) {
+                    weekEventTaskImage.applyColorFilter(textColor)
+                }
+                weekEventImportantImage.beGone()
             }
 
             val startDateTime = Formatter.getDateTimeFromTS(event.startTS)

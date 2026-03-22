@@ -1,5 +1,6 @@
 package org.pblmotion.calendar.adapters
 
+import android.graphics.Typeface
 import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
@@ -10,10 +11,13 @@ import org.pblmotion.calendar.databinding.EventListItemBinding
 import org.pblmotion.calendar.dialogs.DeleteEventDialog
 import org.pblmotion.calendar.extensions.*
 import org.pblmotion.calendar.helpers.Formatter
+import org.pblmotion.calendar.helpers.TaskifyHelper
 import org.pblmotion.calendar.models.Event
 import org.fossify.commons.adapters.MyRecyclerViewAdapter
 import org.fossify.commons.extensions.adjustAlpha
 import org.fossify.commons.extensions.applyColorFilter
+import org.fossify.commons.extensions.beGone
+import org.fossify.commons.extensions.beVisible
 import org.fossify.commons.extensions.beVisibleIf
 import org.fossify.commons.extensions.getProperTextColor
 import org.fossify.commons.helpers.MEDIUM_ALPHA
@@ -28,6 +32,7 @@ class DayEventsAdapter(activity: SimpleActivity, val events: ArrayList<Event>, r
     private val replaceDescriptionWithLocation = activity.config.replaceDescription
     private val dimPastEvents = activity.config.dimPastEvents
     private val dimCompletedTasks = activity.config.dimCompletedTasks
+    private val taskifyEventsMode = activity.config.taskifyEventsMode
     private var isPrintVersion = false
     private val mediumMargin = activity.resources.getDimension(org.fossify.commons.R.dimen.medium_margin).toInt()
 
@@ -89,8 +94,15 @@ class DayEventsAdapter(activity: SimpleActivity, val events: ArrayList<Event>, r
         EventListItemBinding.bind(view).apply {
             eventItemHolder.isSelected = selectedKeys.contains(event.id?.toInt())
             eventItemHolder.background.applyColorFilter(textColor)
-            eventItemTitle.text = event.title
-            eventItemTitle.checkViewStrikeThrough(event.shouldStrikeThrough())
+
+            val taskifyMeta = if (taskifyEventsMode && !event.isTask()) {
+                TaskifyHelper.parseTitle(event.title, taskifyModeEnabled = true)
+            } else {
+                null
+            }
+            val displayTitle = taskifyMeta?.cleanTitle ?: event.title
+            eventItemTitle.text = displayTitle
+            eventItemTitle.checkViewStrikeThrough(event.shouldStrikeThrough() || (taskifyMeta?.isCompleted == true))
             eventItemTime.text = if (event.getIsAllDay()) allDayString else Formatter.getTimeFromTS(activity, event.startTS)
             if (event.startTS != event.endTS) {
                 val startDayCode = Formatter.getDayCodeFromTS(event.startTS)
@@ -124,19 +136,72 @@ class DayEventsAdapter(activity: SimpleActivity, val events: ArrayList<Event>, r
                 newTextColor = newTextColor.adjustAlpha(MEDIUM_ALPHA)
             }
 
+            if (taskifyEventsMode) {
+                // In Taskify mode: show checkbox for all events, hide task icon
+                eventItemTaskImage.beGone()
+
+                val isCompleted = taskifyMeta?.isCompleted ?: event.isTaskCompleted()
+                val isImportant = taskifyMeta?.isImportant ?: false
+
+                val checkboxRes = if (isCompleted) {
+                    R.drawable.ic_checkbox_checked_vector
+                } else {
+                    R.drawable.ic_checkbox_unchecked_vector
+                }
+                eventItemCheckbox.setImageResource(checkboxRes)
+                eventItemCheckbox.applyColorFilter(newTextColor)
+                eventItemCheckbox.beVisible()
+                eventItemCheckbox.setOnClickListener {
+                    toggleTaskifyCompletion(event)
+                }
+
+                // Show important icon when event is important
+                eventItemImportantImage.beVisibleIf(isImportant)
+                if (isImportant) {
+                    eventItemImportantImage.applyColorFilter(newTextColor)
+                    eventItemTitle.setTypeface(null, Typeface.BOLD)
+                } else {
+                    eventItemTitle.setTypeface(null, Typeface.NORMAL)
+                }
+
+                // Show red completed line and dim text for completed events
+                eventItemCompletedLine.beVisibleIf(isCompleted)
+                if (isCompleted) {
+                    newTextColor = newTextColor.adjustAlpha(MEDIUM_ALPHA)
+                }
+            } else {
+                // Normal mode: hide Taskify elements, show task icon for real tasks
+                eventItemCheckbox.beGone()
+                eventItemImportantImage.beGone()
+                eventItemCompletedLine.beGone()
+                eventItemTitle.setTypeface(null, Typeface.NORMAL)
+                eventItemTaskImage.applyColorFilter(newTextColor)
+                eventItemTaskImage.beVisibleIf(event.isTask())
+            }
+
             eventItemTime.setTextColor(newTextColor)
             eventItemTitle.setTextColor(newTextColor)
             eventItemDescription.setTextColor(newTextColor)
-            eventItemTaskImage.applyColorFilter(newTextColor)
-            eventItemTaskImage.beVisibleIf(event.isTask())
 
-            val startMargin = if (event.isTask()) {
-                0
-            } else {
-                mediumMargin
-            }
+            // Start margin for title: 0 when there's an icon on the left, medium margin otherwise
+            val hasLeftIcon = (taskifyEventsMode && taskifyMeta?.isImportant == true) || (!taskifyEventsMode && event.isTask())
+            val startMargin = if (hasLeftIcon) 0 else mediumMargin
 
             (eventItemTitle.layoutParams as ConstraintLayout.LayoutParams).marginStart = startMargin
+        }
+    }
+
+    private fun toggleTaskifyCompletion(event: Event) {
+        ensureBackgroundThread {
+            val freshEvent = activity.eventsDB.getEventWithId(event.id ?: return@ensureBackgroundThread) ?: return@ensureBackgroundThread
+            val taskMeta = TaskifyHelper.parseTitle(freshEvent.title, taskifyModeEnabled = true)
+            val newTitle = TaskifyHelper.encodeTitle(taskMeta.cleanTitle, taskMeta.isImportant, !taskMeta.isCompleted)
+            freshEvent.title = newTitle
+            activity.eventsHelper.updateEvent(freshEvent, updateAtCalDAV = true, showToasts = false)
+            activity.runOnUiThread {
+                event.title = newTitle
+                notifyDataSetChanged()
+            }
         }
     }
 
