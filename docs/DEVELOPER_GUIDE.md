@@ -326,7 +326,24 @@ The pager adapter creates a leaf fragment for each page with a `DAY_CODE` bundle
 `WeeklyGridFragment` is an exception: it is a **leaf fragment** (not a pager). It loads all
 seven days of the selected week in a single pass.
 
-### 7.3 Switching views
+### 7.3 `WeeklyGridFragment` layout model
+
+`WeeklyGridFragment` renders the selected week with `fragment_weekly_grid.xml` and a day-column
+sub-layout in `weekly_grid_day_column.xml`.
+
+The layout is intentionally viewport-filling:
+
+- `weekly_grid_content` uses `match_parent` height inside a `ScrollView` with `fillViewport="true"`
+- the week is split into **four weighted rows** (Sun/Mon, Tue/Wed, Thu/Fri, Sat)
+- each row uses equal `layout_weight`, so every row gets the same height
+- day columns use `match_parent` height so sibling cells in a row remain visually aligned
+- the day-events container uses `0dp` height plus `layout_weight="1"` so the cell stretches to
+  the bottom even when a day has only a few events
+
+This is the place to update if the compact weekly grid should change from a full-height layout to
+an intrinsic-content layout in the future.
+
+### 7.4 Switching views
 
 `MainActivity.updateViewPager()` creates the correct `MyFragmentHolder` subclass and replaces
 the current fragment. `showViewDialog()` presents the radio list. Both operate on the view
@@ -693,7 +710,7 @@ Event rendering differs by view. The table below shows where to look:
 | Agenda / Event list | `event_list_item.xml` | `EventListAdapter.kt` |
 | Month grid (canvas) | N/A (drawn in Kotlin) | `MonthView.kt` |
 | Week timeline | `weekly_view_day_column.xml` | `WeekFragment.kt` |
-| Weekly grid | `weekly_grid_event_item.xml` | `WeeklyGridFragment.kt` |
+| Weekly grid | `fragment_weekly_grid.xml`, `weekly_grid_day_column.xml`, `weekly_grid_event_item.xml` | `WeeklyGridFragment.kt` |
 
 ### Common changes
 
@@ -704,6 +721,11 @@ Event rendering differs by view. The table below shows where to look:
     android:maxLines="3"
     android:ellipsize="none" … />
 ```
+
+**Change weekly grid row sizing / full-height behavior:**
+1. Update `fragment_weekly_grid.xml` to adjust the four row containers (`layout_height="0dp"` + `layout_weight`).
+2. Update `weekly_grid_day_column.xml` if the day column should stop filling the whole cell.
+3. Keep `weekly_grid_day_events` weighted if you still want each cell to stretch to the bottom of the row.
 
 **Add a new icon to every event row:**
 1. Add the `ImageView` to the layout XML with `visibility="gone"`.

@@ -21,22 +21,25 @@ Craft events precisely with times, durations, reminders, and advanced repetition
 Sync effortlessly with Google Calendar, Outlook, Nextcloud, Exchange, and more.
 
 **🎨 PERSONALIZE YOUR PLANNER:**  
-Set custom sounds, looping audio streams, vibrations, and themes to match your preferences.
+Set custom fonts, sounds, looping audio streams, vibrations, and themes to match your preferences.
 
 **🌈 VIBRANT WIDGETS:**  
 Brighten your day with beautiful calendar widgets and themes for your home screen.
 
 **📅 EFFORTLESS DAY MANAGEMENT:**  
-Plan your day with ease, whether you're a busy professional or a family organizer.
+Plan your day with ease whether you prefer a detailed timeline, a compact weekly grid, or a quick agenda scan.
 
 **🎉 IMPORT CELEBRATIONS:**  
 Never miss a birthday or anniversary! Easily import holidays and special dates.
 
 **🔍 FILTER VIEWS:**  
-Quickly find what you're looking for with event filters.
+Quickly find what you're looking for with calendar filters and focused views.
 
 **📆 MULTIPLE VIEWS:**  
-Switch between daily, weekly, monthly, yearly, and event views effortlessly.
+Switch between daily, weekly timeline, weekly grid, monthly, yearly, and agenda views effortlessly.
+
+**✅ TASK-FRIENDLY EVENTS:**  
+Use Taskify Events Mode to mark important items and completed events directly from supported views, including the weekly grid.
 
 **✨ MATERIAL DESIGN ELEGANCE:**  
 Enjoy an intuitive and user-friendly interface with dynamic themes.

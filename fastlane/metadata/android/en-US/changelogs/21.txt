@@ -1,0 +1,9 @@
+Changed:
+
+• Weekly grid view now uses four equal-height rows that fill the available height
+• Updated holiday data
+
+Fixed:
+
+• Fixed event text readability on colored backgrounds
+
