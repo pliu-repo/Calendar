@@ -9,8 +9,9 @@ import androidx.fragment.app.FragmentStatePagerAdapter
 import org.pblmotion.calendar.fragments.WeekFragment
 import org.pblmotion.calendar.helpers.WEEK_START_TIMESTAMP
 import org.pblmotion.calendar.interfaces.WeekFragmentListener
+import org.pblmotion.calendar.interfaces.WeekSwipeListener
 
-class MyWeekPagerAdapter(fm: FragmentManager, private val mWeekTimestamps: List<Long>, private val mListener: WeekFragmentListener) :
+class MyWeekPagerAdapter(fm: FragmentManager, private val mWeekTimestamps: List<Long>, private val mListener: WeekFragmentListener, private val mSwipeListener: WeekSwipeListener? = null) :
     FragmentStatePagerAdapter(fm) {
     private val mFragments = SparseArray<WeekFragment>()
 
@@ -24,6 +25,7 @@ class MyWeekPagerAdapter(fm: FragmentManager, private val mWeekTimestamps: List<
         val fragment = WeekFragment()
         fragment.arguments = bundle
         fragment.listener = mListener
+        fragment.swipeListener = mSwipeListener
 
         return fragment
     }
@@ -31,6 +33,7 @@ class MyWeekPagerAdapter(fm: FragmentManager, private val mWeekTimestamps: List<
     override fun instantiateItem(container: ViewGroup, position: Int): Any {
         val item = super.instantiateItem(container, position)
         if (item is WeekFragment) {
+            item.swipeListener = mSwipeListener
             mFragments.put(position, item)
         }
         return item
