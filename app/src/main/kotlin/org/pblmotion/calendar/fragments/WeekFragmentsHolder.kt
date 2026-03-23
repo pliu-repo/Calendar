@@ -20,13 +20,14 @@ import org.pblmotion.calendar.helpers.Formatter
 import org.pblmotion.calendar.helpers.WEEKLY_VIEW
 import org.pblmotion.calendar.helpers.WEEK_START_DATE_TIME
 import org.pblmotion.calendar.interfaces.WeekFragmentListener
+import org.pblmotion.calendar.interfaces.WeekSwipeListener
 import org.pblmotion.calendar.views.MyScrollView
 import org.fossify.commons.extensions.*
 import org.fossify.commons.helpers.WEEK_SECONDS
 import org.fossify.commons.views.MyViewPager
 import org.joda.time.DateTime
 
-class WeekFragmentsHolder : MyFragmentHolder(), WeekFragmentListener {
+class WeekFragmentsHolder : MyFragmentHolder(), WeekFragmentListener, WeekSwipeListener {
     private val PREFILLED_WEEKS = 151
     private val MAX_SEEKBAR_VALUE = 14
 
@@ -37,6 +38,7 @@ class WeekFragmentsHolder : MyFragmentHolder(), WeekFragmentListener {
     private var currentWeekTS = 0L
     private var isGoToTodayVisible = false
     private var weekScrollY = 0
+    private var isAnimating = false
 
     override val viewType = WEEKLY_VIEW
 
@@ -96,14 +98,18 @@ class WeekFragmentsHolder : MyFragmentHolder(), WeekFragmentListener {
 
     private fun setupWeeklyViewPager() {
         val weekTSs = getWeekTimestamps(currentWeekTS)
-        val weeklyAdapter = MyWeekPagerAdapter(requireActivity().supportFragmentManager, weekTSs, this)
+        val weeklyAdapter = MyWeekPagerAdapter(requireActivity().supportFragmentManager, weekTSs, this, this)
 
         defaultWeeklyPage = weekTSs.size / 2
 
         viewPager.apply {
             adapter = weeklyAdapter
             addOnPageChangeListener(object : ViewPager.OnPageChangeListener {
-                override fun onPageScrollStateChanged(state: Int) {}
+                override fun onPageScrollStateChanged(state: Int) {
+                    if (state == ViewPager.SCROLL_STATE_IDLE) {
+                        isAnimating = false
+                    }
+                }
 
                 override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {}
 
@@ -312,6 +318,24 @@ class WeekFragmentsHolder : MyFragmentHolder(), WeekFragmentListener {
             Formatter.getDateTimeFromTS(currentWeekTS)
         } else {
             null
+        }
+    }
+
+    override fun onSwipeToNextWeek() {
+        if (isAnimating) return
+        val nextItem = viewPager.currentItem + 1
+        if (nextItem < (viewPager.adapter?.count ?: 0)) {
+            isAnimating = true
+            viewPager.setCurrentItem(nextItem, true)
+        }
+    }
+
+    override fun onSwipeToPreviousWeek() {
+        if (isAnimating) return
+        val prevItem = viewPager.currentItem - 1
+        if (prevItem >= 0) {
+            isAnimating = true
+            viewPager.setCurrentItem(prevItem, true)
         }
     }
 }

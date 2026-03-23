@@ -7,7 +7,6 @@ import android.content.Intent
 import android.content.res.Resources
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
-import android.os.Handler
 import android.util.Range
 import android.view.DragEvent
 import android.view.GestureDetector
@@ -27,7 +26,6 @@ import org.pblmotion.calendar.databinding.AllDayEventsHolderLineBinding
 import org.pblmotion.calendar.databinding.FragmentWeekBinding
 import org.pblmotion.calendar.databinding.WeekAllDayEventMarkerBinding
 import org.pblmotion.calendar.databinding.WeekEventMarkerBinding
-import org.pblmotion.calendar.databinding.WeekGridItemBinding
 import org.pblmotion.calendar.databinding.WeekNowMarkerBinding
 import org.pblmotion.calendar.databinding.WeeklyViewDayColumnBinding
 import org.pblmotion.calendar.databinding.WeeklyViewDayLetterBinding
@@ -49,20 +47,16 @@ import org.pblmotion.calendar.helpers.EVENT_OCCURRENCE_TS
 import org.pblmotion.calendar.helpers.FLAG_ALL_DAY
 import org.pblmotion.calendar.helpers.Formatter
 import org.pblmotion.calendar.helpers.IS_TASK_COMPLETED
-import org.pblmotion.calendar.helpers.NEW_EVENT_SET_HOUR_DURATION
-import org.pblmotion.calendar.helpers.NEW_EVENT_START_TS
-import org.pblmotion.calendar.helpers.TYPE_EVENT
-import org.pblmotion.calendar.helpers.TYPE_TASK
 import org.pblmotion.calendar.helpers.WEEK_START_TIMESTAMP
 import org.pblmotion.calendar.helpers.WeeklyCalendarImpl
 import org.pblmotion.calendar.helpers.getActivityToOpen
 import org.pblmotion.calendar.helpers.isWeekend
 import org.pblmotion.calendar.interfaces.WeekFragmentListener
+import org.pblmotion.calendar.interfaces.WeekSwipeListener
 import org.pblmotion.calendar.interfaces.WeeklyCalendar
 import org.pblmotion.calendar.models.Event
 import org.pblmotion.calendar.models.EventWeeklyView
 import org.pblmotion.calendar.views.MyScrollView
-import org.fossify.commons.dialogs.RadioGroupDialog
 import org.fossify.commons.extensions.adjustAlpha
 import org.fossify.commons.extensions.applyColorFilter
 import org.fossify.commons.extensions.beGone
@@ -83,23 +77,23 @@ import org.fossify.commons.helpers.MEDIUM_ALPHA
 import org.fossify.commons.helpers.WEEK_SECONDS
 import org.fossify.commons.helpers.ensureBackgroundThread
 import org.fossify.commons.helpers.isNougatPlus
-import org.fossify.commons.models.RadioItem
 import org.joda.time.DateTime
 import org.joda.time.Days
 import java.util.Calendar
+import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 
 class WeekFragment : Fragment(), WeeklyCalendar {
     private val WEEKLY_EVENT_ID_LABEL = "event_id_label"
-    private val PLUS_FADEOUT_DELAY = 5000L
     private val MIN_SCALE_FACTOR = 0.3f
     private val MAX_SCALE_FACTOR = 5f
     private val MIN_SCALE_DIFFERENCE = 0.02f
     private val SCALE_RANGE = MAX_SCALE_FACTOR - MIN_SCALE_FACTOR
 
     var listener: WeekFragmentListener? = null
+    var swipeListener: WeekSwipeListener? = null
     private var weekTimestamp = 0L
     private var weekDateTime = DateTime()
     private var rowHeight = 0f
@@ -121,9 +115,7 @@ class WeekFragment : Fragment(), WeeklyCalendar {
     private var highlightWeekends = false
     private var wasScaled = false
     private var isPrintVersion = false
-    private var selectedGrid: View? = null
     private var currentTimeView: ImageView? = null
-    private var fadeOutHandler = Handler()
     private var allDayHolders = ArrayList<RelativeLayout>()
     private var allDayRows = ArrayList<HashSet<Int>>()
     private var allDayEventToRow = LinkedHashMap<Event, Int>()
@@ -166,8 +158,10 @@ class WeekFragment : Fragment(), WeeklyCalendar {
             weekEventsColumnsHolder.layoutParams.height = fullHeight
 
             val scaleDetector = getViewScaleDetector()
+            val swipeDetector = getHorizontalSwipeDetector()
             scrollView.setOnTouchListener { _, motionEvent ->
                 scaleDetector.onTouchEvent(motionEvent)
+                swipeDetector.onTouchEvent(motionEvent)
                 if (motionEvent.action == MotionEvent.ACTION_UP && wasScaled) {
                     scrollView.isScrollable = true
                     wasScaled = false
@@ -449,54 +443,36 @@ class WeekFragment : Fragment(), WeeklyCalendar {
     private fun getViewGestureDetector(view: ViewGroup, index: Int): GestureDetector {
         return GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
             override fun onSingleTapUp(event: MotionEvent): Boolean {
-                selectedGrid?.animation?.cancel()
-                selectedGrid?.beGone()
-
-                val hour = (event.y / rowHeight).toInt()
-                selectedGrid = WeekGridItemBinding.inflate(layoutInflater).root.apply {
-                    view.addView(this)
-                    background = ColorDrawable(primaryColor)
-                    layoutParams.width = view.width
-                    layoutParams.height = rowHeight.toInt()
-                    y = hour * rowHeight - hour / 2
-                    applyColorFilter(primaryColor.getContrastColor())
-
-                    setOnClickListener {
-                        val timestamp =
-                            weekDateTime.plusDays(index).withTime(hour, 0, 0, 0).seconds()
-                        if (config.allowCreatingTasks) {
-                            val items = arrayListOf(
-                                RadioItem(TYPE_EVENT, getString(R.string.event)),
-                                RadioItem(TYPE_TASK, getString(R.string.task))
-                            )
-
-                            RadioGroupDialog(activity!!, items) {
-                                launchNewEventIntent(timestamp, it as Int == TYPE_TASK)
-                            }
-                        } else {
-                            launchNewEventIntent(timestamp, false)
-                        }
-                    }
-
-                    // do not use setStartDelay, it will trigger instantly if the device has disabled animations
-                    fadeOutHandler.removeCallbacksAndMessages(null)
-                    fadeOutHandler.postDelayed({
-                        animate().alpha(0f).withEndAction {
-                            beGone()
-                        }
-                    }, PLUS_FADEOUT_DELAY)
-                }
-                return super.onSingleTapUp(event)
+                (activity as? MainActivity)?.openDayFromWeekly(weekDateTime.plusDays(index))
+                return true
             }
         })
     }
 
-    private fun launchNewEventIntent(timestamp: Long, isTask: Boolean) {
-        Intent(context, getActivityToOpen(isTask)).apply {
-            putExtra(NEW_EVENT_START_TS, timestamp)
-            putExtra(NEW_EVENT_SET_HOUR_DURATION, true)
-            startActivity(this)
-        }
+    private fun getHorizontalSwipeDetector(): GestureDetector {
+        return GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
+            private val SWIPE_THRESHOLD_PX = 100
+            private val SWIPE_VELOCITY_THRESHOLD_PX = 100
+
+            override fun onFling(e1: MotionEvent?, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
+                if (e1 == null) return false
+                val diffX = e2.x - e1.x
+                val diffY = e2.y - e1.y
+                return if (abs(diffX) > abs(diffY) &&
+                    abs(diffX) > SWIPE_THRESHOLD_PX &&
+                    abs(velocityX) > SWIPE_VELOCITY_THRESHOLD_PX
+                ) {
+                    if (diffX < 0) {
+                        swipeListener?.onSwipeToNextWeek()
+                    } else {
+                        swipeListener?.onSwipeToPreviousWeek()
+                    }
+                    true
+                } else {
+                    false
+                }
+            }
+        })
     }
 
     private fun getViewScaleDetector(): ScaleGestureDetector {
