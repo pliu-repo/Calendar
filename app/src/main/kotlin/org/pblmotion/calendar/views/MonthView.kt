@@ -391,6 +391,17 @@ class MonthView(context: Context, attrs: AttributeSet, defStyle: Int) : View(con
             taskIcon.draw(canvas)
             taskCheckboxHitAreas.add(event.id to RectF(taskIconLeft, taskIconTop, taskIconRight, taskIconBottom))
             taskIconWidth += eventTitleHeight + smallPadding
+        } else if (config.taskifyEventsMode && event.isImportant) {
+            val importantIcon = resources.getColoredDrawableWithColor(R.drawable.ic_important_vector, specificEventTitlePaint.color).mutate()
+            val iconPadding = smallPadding * 2
+            val iconY = yPos.toInt() + verticalOffset - eventTitleHeight + iconPadding
+            val iconLeft = xPos + iconPadding
+            val iconTop = iconY.toFloat()
+            val iconRight = xPos + eventTitleHeight + iconPadding
+            val iconBottom = (iconY + eventTitleHeight).toFloat()
+            importantIcon.setBounds(iconLeft.toInt(), iconTop.toInt(), iconRight.toInt(), iconBottom.toInt())
+            importantIcon.draw(canvas)
+            taskIconWidth += eventTitleHeight + smallPadding
         }
 
         drawEventTitle(event, canvas, xPos + taskIconWidth, yPos + verticalOffset, bgRight - bgLeft - smallPadding - taskIconWidth, specificEventTitlePaint)
