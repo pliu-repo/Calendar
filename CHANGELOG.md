@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed event text readability on colored backgrounds ([#1065])
 
 ### Changed
+- Weekly grid view now uses four equal-height rows that fill the available height
 - Updated holiday data
 
 ## [1.10.3] - 2026-02-14

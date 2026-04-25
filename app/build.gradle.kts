@@ -141,7 +141,9 @@ detekt {
 }
 
 dependencies {
-    implementation(libs.fossify.commons)
+    implementation(libs.fossify.commons) {
+        exclude(group = "com.android.support")
+    }
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.swiperefreshlayout)
     implementation(libs.androidx.print)

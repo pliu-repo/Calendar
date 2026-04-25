@@ -29,7 +29,7 @@
 
     </RelativeLayout>
 
-    <org.fossify.calendar.views.MyScrollView
+    <org.pblmotion.calendar.views.MyScrollView
         android:id="@+id/week_events_scrollview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -43,7 +43,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
-            <org.fossify.calendar.views.WeeklyViewGrid
+            <org.pblmotion.calendar.views.WeeklyViewGrid
                 android:id="@+id/week_horizontal_grid_holder"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
@@ -56,5 +56,5 @@
                 android:orientation="horizontal" />
 
         </RelativeLayout>
-    </org.fossify.calendar.views.MyScrollView>
+    </org.pblmotion.calendar.views.MyScrollView>
 </RelativeLayout>
