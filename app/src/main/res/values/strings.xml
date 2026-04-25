@@ -4,6 +4,7 @@
     <string name="change_view">Change view</string>
     <string name="daily_view">Daily view</string>
     <string name="weekly_view">Weekly view</string>
+    <string name="weekly_grid_view">Weekly grid view</string>
     <string name="monthly_view">Monthly view</string>
     <string name="monthly_daily_view">Monthly and daily view</string>
     <string name="yearly_view">Yearly view</string>
@@ -230,6 +231,11 @@
     <string name="allow_changing_time_zones">Allow changing event time zones</string>
     <string name="manage_quick_filter_event_types">Manage quick filter calendars</string>
     <string name="allow_creating_tasks">Allow creating tasks</string>
+    <string name="taskify_events_mode">Taskify Events Mode</string>
+    <string name="taskify_events_mode_description">Convert all events into actionable tasks with importance and completion controls.</string>
+    <string name="important">Important</string>
+    <string name="completed">Completed</string>
+    <string name="toggle_completion">Toggle completion</string>
 
     <!-- CalDAV sync -->
     <string name="caldav">CalDAV</string>

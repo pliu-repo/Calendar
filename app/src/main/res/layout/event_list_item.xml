@@ -31,6 +31,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="@id/event_item_title" />
 
+        <!-- Task icon (shown for actual tasks, hidden for Taskify events) -->
         <ImageView
             android:id="@+id/event_item_task_image"
             android:layout_width="wrap_content"
@@ -40,25 +41,66 @@
             android:paddingTop="@dimen/small_margin"
             android:paddingBottom="@dimen/small_margin"
             android:src="@drawable/ic_task_vector"
+            android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="@+id/event_item_title"
             app:layout_constraintStart_toEndOf="@+id/event_item_color_bar"
+            app:layout_constraintTop_toTopOf="@+id/event_item_title" />
+
+        <!-- Important icon (visible only when isImportant == true in Taskify mode) -->
+        <ImageView
+            android:id="@+id/event_item_important_image"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:layout_marginStart="@dimen/tiny_margin"
+            android:contentDescription="@string/important"
+            android:paddingTop="@dimen/small_margin"
+            android:paddingBottom="@dimen/small_margin"
+            android:src="@drawable/ic_important_vector"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@+id/event_item_title"
+            app:layout_constraintStart_toEndOf="@+id/event_item_task_image"
             app:layout_constraintTop_toTopOf="@+id/event_item_title" />
 
         <TextView
             android:id="@+id/event_item_title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:ellipsize="end"
+            android:ellipsize="none"
             android:includeFontPadding="false"
-            android:maxLines="1"
+            android:maxLines="3"
             android:paddingTop="@dimen/small_margin"
-            android:paddingEnd="@dimen/activity_margin"
+            android:paddingEnd="@dimen/tiny_margin"
             android:paddingBottom="@dimen/tiny_margin"
             android:textSize="@dimen/day_text_size"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/event_item_task_image"
+            app:layout_constraintEnd_toStartOf="@+id/event_item_checkbox"
+            app:layout_constraintStart_toEndOf="@+id/event_item_important_image"
             app:layout_constraintTop_toTopOf="parent"
             tools:text="Event title" />
+
+        <!-- Taskify completion checkbox on the RIGHT side (shown for Taskify events, hidden for tasks/normal events) -->
+        <ImageView
+            android:id="@+id/event_item_checkbox"
+            android:layout_width="@dimen/taskify_checkbox_size"
+            android:layout_height="@dimen/taskify_checkbox_size"
+            android:layout_marginEnd="@dimen/taskify_checkbox_margin_end"
+            android:contentDescription="@string/toggle_completion"
+            android:src="@drawable/ic_checkbox_unchecked_vector"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@+id/event_item_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/event_item_title" />
+
+        <!-- Red strikethrough overlay for completed Taskify events -->
+        <View
+            android:id="@+id/event_item_completed_line"
+            android:layout_width="0dp"
+            android:layout_height="2dp"
+            android:background="@color/taskify_strikethrough"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@+id/event_item_title"
+            app:layout_constraintEnd_toEndOf="@+id/event_item_title"
+            app:layout_constraintStart_toStartOf="@+id/event_item_title"
+            app:layout_constraintTop_toTopOf="@+id/event_item_title" />
 
         <org.fossify.commons.views.MyTextView
             android:id="@+id/event_item_time"
@@ -72,6 +114,7 @@
             android:paddingBottom="@dimen/small_margin"
             android:textFontWeight="300"
             android:textSize="@dimen/normal_text_size"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/event_item_color_bar"
             app:layout_constraintTop_toBottomOf="@+id/event_item_title"
             tools:text="13:00" />
