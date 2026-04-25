@@ -27,7 +27,12 @@ base {
     archivesName = "calendar-$versionCode"
 }
 
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 android {
+    namespace = project.property("APP_ID").toString()
     compileSdk = project.libs.versions.app.build.compileSDKVersion.get().toInt()
 
     defaultConfig {
@@ -37,9 +42,6 @@ android {
         versionCode = project.property("VERSION_CODE").toString().toInt()
         versionName = project.property("VERSION_NAME").toString()
         vectorDrawables.useSupportLibrary = true
-        ksp {
-            arg("room.schemaLocation", "$projectDir/schemas")
-        }
     }
 
     signingConfigs {
@@ -96,7 +98,7 @@ android {
     }
 
     compileOptions {
-        val currentJavaVersionFromLibs = JavaVersion.valueOf(libs.versions.app.build.javaVersion.get().toString())
+        val currentJavaVersionFromLibs = JavaVersion.valueOf(libs.versions.app.build.javaVersion.get())
         sourceCompatibility = currentJavaVersionFromLibs
         targetCompatibility = currentJavaVersionFromLibs
     }
@@ -109,14 +111,6 @@ android {
         @Suppress("UnstableApiUsage")
         generateLocaleConfig = true
     }
-
-    tasks.withType<KotlinCompile> {
-        compilerOptions.jvmTarget.set(
-            JvmTarget.fromTarget(project.libs.versions.app.build.kotlinJVMTarget.get())
-        )
-    }
-
-    namespace = project.property("APP_ID").toString()
 
     lint {
         checkReleaseBuilds = false
@@ -133,6 +127,12 @@ android {
     }
 }
 
+tasks.withType<KotlinCompile> {
+    compilerOptions.jvmTarget.set(
+        JvmTarget.fromTarget(project.libs.versions.app.build.kotlinJVMTarget.get())
+    )
+}
+
 detekt {
     baseline = file("detekt-baseline.xml")
     config.setFrom("$rootDir/detekt.yml")
@@ -141,7 +141,9 @@ detekt {
 }
 
 dependencies {
-    implementation(libs.fossify.commons)
+    implementation(libs.fossify.commons) {
+        exclude(group = "com.android.support")
+    }
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.swiperefreshlayout)
     implementation(libs.androidx.print)
